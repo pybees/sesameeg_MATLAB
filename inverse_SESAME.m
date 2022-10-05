@@ -1,4 +1,4 @@
-function [result] = inverse_SESAME(full_data, leadfield, sourcespace, cfg)
+function [result] = inverse_SESAME_hyper_noise(full_data, leadfield, sourcespace, cfg)
 
 % inverse_SESAME samples the posterior distribution of a
 % multi-dipole Bayesian model and provides an estimate of the number of
@@ -87,6 +87,7 @@ function [result] = inverse_SESAME(full_data, leadfield, sourcespace, cfg)
 
 % Copyright (C) 2019 Gianvittorio Luria, Sara Sommariva, Alberto Sorrentino
 
+evol_exp = cfg.evol_exp;
 noise_std = [];
 dipmom_std = [];
 n_samples = [];
@@ -117,15 +118,14 @@ if isfield(cfg,'t_stop')
     t_stop = cfg.t_stop;
 end
 
-
 data = full_data;
 
 if isempty(noise_std)
-    noise_std = 0.1 * max(max(abs(data)));%*sqrt(t_stop-t_start+1);
+    noise_std = 0.17 * max(max(abs(data)));
     disp(strcat(['Noise std set automatically to: ', num2str(noise_std)]));
 end
 if isempty(dipmom_std)
-    dipmom_std = 15*max(max(abs(data)))/max(max(abs(leadfield(:,:,1))));
+    dipmom_std = 15*max(max(abs(data)))/max(max(abs(leadfield)));
     disp(strcat(['Dipmom std set automatically to: ', num2str(dipmom_std)]));
 end
 if isempty(n_samples)
@@ -150,6 +150,11 @@ end
 
 V = sourcespace;
 
+scaling_factor = 1;%1e-6 / max(max(data));
+data = scaling_factor * data;
+dipmom_std = scaling_factor * dipmom_std;
+noise_std = scaling_factor * noise_std;
+
 % if there are no neighbours/neighbour probabilities, those are computed
 % here:
 
@@ -167,32 +172,33 @@ end
 
 % set parameters
 n_ist = size(data, 2);
-N = 200;           % initial max number of iterations, determines array size
+N = 5000;           % initial max number of iterations, determines array size
 C = size(V,1);      % number of voxels
-nsens = size(leadfield(:,:,1),1);  % number of sensors
-ncomp = size(leadfield(:,:,1),2)/size(sourcespace,1); % 3 if free orientation, 1 if cortically constrained
-NDIP = 8;           % maximum number of dipoles
-lambda_prior = .25; % mean of the Poisson prior
+nsens = size(leadfield,1);  % number of sensors
+ncomp = size(leadfield,2)/size(sourcespace,1); % 3 if free orientation, 1 if cortically constrained
+NDIP = 10;           % maximum number of dipoles
+lambda_prior = cfg.lambda; % mean of the Poisson prior
 mean_Qin = zeros(3,1); % mean of the Gaussian prior on the dipole moment
+
 cov_Qin = dipmom_std^2 * eye(3); % covariance of Gaussian prior on the dipole moment
 cov_noise = noise_std^2 * eye(nsens); % covariance of the likelihood function
 delta_min = 1e-5; delta_max = 1e-1; % min/max increment of the exponent in a single iteration
 gamma_high = 0.99; gamma_low = 0.9; % acceptable interval for the drop in the Effective Sample Size
 Q_birth = 1/3; Q_death = 1/20; % probability of proposing a birth/death
 dipmom_range = 3; % currently fixed hyperparameter, log--range of the hyperprior on dipmom_std
-n_lead = size(leadfield,3);
+noise_range = 3; % currently fixed hyperparameter, log--range of the hyperprior on noise_std
+noise_std_proposal = 10;
 
 exponent_likelihood(1) = 0;
 exponent_likelihood(2) = 0;
 
 % define structures
 for j = 1:NDIP
-    dipole(j) = struct('c', 0, 'qmean', zeros(3,1), 'qvar', zeros(3), 'leadfield', 1);
+    dipole(j) = struct('c', 0, 'qmean', zeros(3,1), 'qvar', zeros(3));
 end
 for i = 1:n_samples
-    particle(i) = struct('nu',0,'dipole',dipole, 'prior', 1, 'log_like', 0, 'like_det',1, 'dipmom_std', 1);
+    particle(i) = struct('nu',0,'dipole',dipole, 'prior', 1, 'log_like', 0, 'like_det',1, 'dipmom_std', 1, 'noise_std', noise_std);
 end
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%% Sampling from the prior %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -201,32 +207,31 @@ weights = zeros(1,n_samples);
 AllWeights = zeros(N, n_samples);
 log_update = weights;
 n = 1;
+
 for i = 1:n_samples
     ndip = poissrnd(lambda_prior);
     particle(i).dipmom_std = 10^(dipmom_range*rand)*dipmom_std/35;
+    particle(i).noise_std = gamrnd(2,noise_std * 4);%10^(noise_range*rand)*noise_std/35;
     for r = 1:ndip
         particle(i) = add_dipole_location(particle(i), C);
-        particle(i).dipole(r).leadfield = randi(n_lead);
         particle(i).dipole(r).qmean = mean_Qin;
         particle(i).dipole(r).qvar = particle(i).dipmom_std^2 * eye(3);
     end
-
-    particle(i) = prior_and_like(particle(i), leadfield, data, lambda_prior, dipmom_std, nsens, ncomp, fact, noise_std, n_ist);
+    
+    particle(i) = prior_and_like(particle(i), leadfield, data, lambda_prior, nsens, ncomp, fact, n_ist, noise_std);
     if isinf(particle(i).log_like)
         disp('Problem');
     end
     % the two following lines are currently useless because exponent_likelihood(2) = exponent_likelihood(1) = 0
     % we just let them here in case we decide to modify these values
-    weights(i) = 1/sqrt(particle(i).like_det)^(n_ist*exponent_likelihood(1)) * exp(particle(i).log_like)^(exponent_likelihood(1)/(2*noise_std^2));
-    log_update(i) = -0.5*n_ist*(exponent_likelihood(2)-exponent_likelihood(1))*log(particle(i).like_det)-...
-        ((exponent_likelihood(2)-exponent_likelihood(1))/(2*noise_std^2))*particle(i).log_like;
+    weights(i) = 1/sqrt(particle(i).like_det)^(n_ist*exponent_likelihood(1)) * exp(particle(i).log_like)^(exponent_likelihood(1)/(2*particle(i).noise_std^2));
+    log_update(i) = -0.5*(exponent_likelihood(n+1)-exponent_likelihood(n))*(n_ist*log(particle(i).like_det) + (1/(particle(i).noise_std^2))*particle(i).log_like);
 end
-
 weights = weights ./ sum(weights);
 
 pmap = zeros(size(V,1), N, NDIP);
+pmap_singdip = zeros(size(V,1),NDIP,N);
 mod_sel = zeros(NDIP+1,N);
-lead_sel = zeros(n_lead,N);
 est_dip = [];
 estimated_dipoles = [];
 Q_estimated = [];
@@ -234,9 +239,6 @@ QV_estimated = [];
 kkk = 1;
 for i = 1:n_samples
     mod_sel(particle(i).nu+1,n) = mod_sel(particle(i).nu+1,n) + weights(i);
-    for j=1:particle(i).nu
-        lead_sel(particle(i).dipole(j).leadfield,n) = lead_sel(particle(i).dipole(j).leadfield,n) + weights(i)/particle(i).nu;
-    end
     if particle(i).nu <=NDIP
         for r = 1:particle(i).nu
             pmap(particle(i).dipole(r).c, n, particle(i).nu) =  pmap(particle(i).dipole(r).c, n, particle(i).nu) + weights(i);
@@ -244,7 +246,7 @@ for i = 1:n_samples
     end
 end
 
-tic
+tStart = cputime;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%% Main cycle %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -309,52 +311,53 @@ while exponent_likelihood(n) <= 1
         weights = exp(log_weight_unnorm-log_cost_norm);
     end
     AllWeights(n,:) = weights;
-
+    
     % MCMC step
     for i = 1:n_samples
         particle_proposed = particle(i);
-
+        
         % MH for the hyperparameter dipmom_std
         particle_proposed = particle(i);
         particle_proposed.dipmom_std = gamrnd(3, particle_proposed.dipmom_std/3);
-
-        particle_proposed = prior_and_like(particle_proposed, leadfield, data, lambda_prior, dipmom_std, nsens, ncomp, fact, noise_std, n_ist);
-
+        
+        particle_proposed = prior_and_like(particle_proposed, leadfield, data, lambda_prior, nsens, ncomp, fact, n_ist, noise_std);
+        
         log_rapp_like = 0.5*exponent_likelihood(n)*n_ist*(log(particle(i).like_det)-log(particle_proposed.like_det))+...
-            (exponent_likelihood(n)/(2*noise_std^2))*(particle(i).log_like-particle_proposed.log_like);
+            (exponent_likelihood(n)/(2*particle(i).noise_std^2))*(particle(i).log_like - particle_proposed.log_like);
         rapp_like = exp(log_rapp_like);
-
+        
         alpha = (particle_proposed.prior*gampdf(particle(i).dipmom_std, 3, particle_proposed.dipmom_std/3))/...
             (particle(i).prior * gampdf(particle_proposed.dipmom_std, 3, particle(i).dipmom_std/3))*rapp_like;
-
+        
         alpha = min([1,alpha]);
         if rand < alpha
             particle(i) = particle_proposed;
         end
+        particle_proposed = particle(i);
+        
+        % MH for the hyperparameter noise_std
+        particle_proposed = particle(i);
+        particle_proposed.noise_std = gamrnd(noise_std_proposal, particle(i).noise_std/noise_std_proposal);
+        
+        particle_proposed = prior_and_like(particle_proposed, leadfield, data, lambda_prior, nsens, ncomp, fact, n_ist, noise_std);
 
-        % MH for the leadfield kind
-        for r = 1:particle_proposed.nu
-            particle_proposed = particle(i); %viani -> ogni volta rinizio da capo
-            particle_proposed.dipole(r).leadfield = randi(n_lead);
-
-            particle_proposed = prior_and_like(particle_proposed, leadfield, data, lambda_prior, dipmom_std, nsens, ncomp, fact, noise_std, n_ist);
-            log_rapp_like = 0.5*exponent_likelihood(n)*n_ist*(log(particle(i).like_det)-log(particle_proposed.like_det))+...
-                (exponent_likelihood(n)/(2*noise_std^2))*(particle(i).log_like-particle_proposed.log_like);
-            rapp_like = exp(log_rapp_like);
-
-            alpha = particle_proposed.prior/particle(i).prior * rapp_like;
-
-            alpha = min([1,alpha]);
-            if rand < alpha
-                particle(i) = particle_proposed;
-            end
+        log_rapp_like = - exponent_likelihood(n)*nsens*n_ist*(log(particle_proposed.noise_std) - log(particle(i).noise_std)) + ...
+            0.5*exponent_likelihood(n)*n_ist*(log(particle(i).like_det)-log(particle_proposed.like_det)) + ...
+            0.5*exponent_likelihood(n)*(particle(i).log_like/particle(i).noise_std^2 - particle_proposed.log_like/particle_proposed.noise_std^2);
+        
+        rapp_like = exp(log_rapp_like);
+        rapp_proposal = gampdf(particle(i).noise_std, noise_std_proposal, particle_proposed.noise_std/noise_std_proposal) / ...
+            gampdf(particle_proposed.noise_std, noise_std_proposal, particle(i).noise_std/noise_std_proposal);
+        rapp_prior = particle_proposed.prior / particle(i).prior;
+        
+        alpha = rapp_proposal* rapp_prior *rapp_like;
+        
+        alpha = min([1,alpha]);
+        if rand < alpha
+            particle(i) = particle_proposed;
         end
         particle_proposed = particle(i);
-
-        %while particle_proposed.leadfield == particle(i).leadfield
-        %   particle_proposed.leadfield = randi(n_lead);
-        %end
-
+        
         % Add/Remove dipole (RJ step)
         BirthOrDeath = rand;
         if BirthOrDeath < Q_birth && particle_proposed.nu < NDIP
@@ -362,15 +365,16 @@ while exponent_likelihood(n) <= 1
             r = particle_proposed.nu;
             particle_proposed.dipole(r).qmean = mean_Qin;
             particle_proposed.dipole(r).qvar = cov_Qin;
-            particle_proposed.dipole(r).leadfield = randi(n_lead);
         elseif BirthOrDeath > 1-Q_death
-            [DipoleDying, particle_proposed] = remove_dipole(particle_proposed);
+            [~, particle_proposed] = remove_dipole(particle_proposed);
         end
-
+        
         if particle_proposed.nu ~= particle(i).nu
-            particle_proposed = prior_and_like(particle_proposed, leadfield, data, lambda_prior, dipmom_std, nsens, ncomp, fact, noise_std, n_ist);
+            particle_proposed = prior_and_like(particle_proposed, leadfield, data, lambda_prior, nsens, ncomp, fact, n_ist, noise_std);
+            
             log_rapp_like = 0.5*exponent_likelihood(n)*n_ist*(log(particle(i).like_det)-log(particle_proposed.like_det))+...
-                (exponent_likelihood(n)/(2*noise_std^2))*(particle(i).log_like-particle_proposed.log_like);
+                (exponent_likelihood(n)/(2*particle(i).noise_std^2))*(particle(i).log_like-particle_proposed.log_like);
+            
             rapp_like = exp(log_rapp_like);
             if particle_proposed.nu > particle(i).nu
                 alpha = ((particle_proposed.prior*Q_death)/(particle(i).prior*Q_birth))*rapp_like;
@@ -383,7 +387,6 @@ while exponent_likelihood(n) <= 1
             end
             particle_proposed = particle(i);
         end
-
         % Update dipole locations, starting from the last one
         for r = particle_proposed.nu:-1:1
             n_neighbours = length(find(neighbours(particle_proposed.dipole(r).c,:)>0));
@@ -394,8 +397,7 @@ while exponent_likelihood(n) <= 1
                 while randnum > sum(neighboursp(particle_proposed.dipole(r).c,1:indP)) && indP < n_neighbours
                     indP = indP + 1;
                 end
-
-                location_proposed = neighbours(particle_proposed.dipole(r).c,indP); %I have to propose using the gradient (p=dipole position)
+                location_proposed = neighbours(particle_proposed.dipole(r).c,indP);
                 is_location_new = 1;
                 for k = [particle_proposed.nu:-1:r+1, r-1:-1:1]
                     if location_proposed == particle_proposed.dipole(k).c
@@ -411,9 +413,10 @@ while exponent_likelihood(n) <= 1
             end
             prob_move_reverse = neighboursp(location_proposed, indP);
             particle_proposed.dipole(r).c = location_proposed;
-            particle_proposed = prior_and_like(particle_proposed, leadfield, data, lambda_prior, dipmom_std, nsens, ncomp, fact, noise_std, n_ist);
+            particle_proposed = prior_and_like(particle_proposed, leadfield, data, lambda_prior, nsens, ncomp, fact, n_ist, noise_std);
             log_rapp_like = 0.5*exponent_likelihood(n)*n_ist*(log(particle(i).like_det)-log(particle_proposed.like_det))+...
-                (exponent_likelihood(n)/(2*noise_std^2))*(particle(i).log_like-particle_proposed.log_like);
+                (exponent_likelihood(n)/(2*particle(i).noise_std^2))*(particle(i).log_like-particle_proposed.log_like);
+            
             rapp_like = exp(log_rapp_like);
             alpha = rapp_like*((particle_proposed.prior*prob_move_reverse) / (particle(i).prior*prob_move));
             alpha = min([1,alpha]);
@@ -422,102 +425,129 @@ while exponent_likelihood(n) <= 1
             end
         end
     end
-
     % on-line estimates
     for i = 1:n_samples
         mod_sel(particle(i).nu+1,n) = mod_sel(particle(i).nu+1,n) + weights(i);
-        for j=1:particle(i).nu
-            lead_sel(particle(i).dipole(j).leadfield,n) = lead_sel(particle(i).dipole(j).leadfield,n) + weights(i)/particle(i).nu;
-        end
         if particle(i).nu <=NDIP
             for r = 1:particle(i).nu
                 pmap(particle(i).dipole(r).c,n, particle(i).nu) =  pmap(particle(i).dipole(r).c,n, particle(i).nu) + weights(i);
             end
         end
     end
-    [max_mod, ind_mod] = max(mod_sel(:,n));
-    [max_lead, ind_lead] = max(lead_sel(:,n));
+    [~, ind_mod] = max(mod_sel(:,n));
     disp(strcat(['Estimated number of dipoles: ', num2str(ind_mod-1)]))
-    disp(strcat(['Estimated number of leadfield: ', num2str(ind_lead)]))
-    [~, eee, stds] = point_estimation(particle, weights, V, NDIP);
+    disp(strcat(['Model selsection: ', num2str(mod_sel(1:4,n)')]))
+    [~, eee,pmap_singdip(:,:,n)] = point_estimation(particle, weights, V, NDIP);
     for i = 1:numel(eee)
         est_dip(kkk,:) = [V(eee(i),:) n eee(i)];
         kkk=kkk+1;
         disp(strcat(['Estimated location of dipole ', num2str(i), ': vertex number ' num2str(eee(i))]));
     end
+    
+    v_noise = zeros(n_samples, 1);
+    v_weight = zeros(n_samples, 1);
+    for i=1:n_samples
+        v_noise(i) =  particle(i).noise_std/scaling_factor;
+        v_weight(i) = weights(i);
+    end
+    disp(strcat(['Conditional Mean noise std: ', num2str(sum(v_noise .* v_weight))]));
+    
     MCsamples{n}.all_particles = particle;
-
+    
+    % optional plot of current iteration
+    if isfield(cfg,'plot')
+        if strcmp(cfg.plot,'surf')==1 && isfield(cfg, 'tris') && isfield(cfg,'V_infl') && mod(n,5)==0
+            if n==5
+                figure
+                set(gcf,'pos',[200 70 1500 770])
+                pause(.2)
+            end
+            inverse_SESAME_surf_viewer(full_data, pmap, mod_sel, neighbours, n, cfg);
+        end
+    end
+    
     % Adaptive choice of the next exponent
-    is_last_operation_increment = 0;
-    if exponent_likelihood(n) == 1
-        exponent_likelihood(n+1) = 1.01;
-      else
-          delta_a = delta_min;
-          delta_b = delta_max;
-          delta(n+1) = delta_max;
-          exponent_likelihood(n+1) = exponent_likelihood(n) + delta(n+1);
-          log_ESS(n+1) = -Inf;
-          iterations = 1;
-          while (log_ESS(n+1) - log(ESS(n))) > log(gamma_high) || (log_ESS(n+1) - log(ESS(n))) < log(gamma_low)
-              for i=1:n_samples
-                  if n < N
-                      log_update(i) = -0.5*n_ist*(exponent_likelihood(n+1)-exponent_likelihood(n))*log(particle(i).like_det)-...
-                          ((exponent_likelihood(n+1)-exponent_likelihood(n))/(2*noise_std^2))*particle(i).log_like;
-                  end
-              end
-              log_weight_unnorm = log(weights) + log_update;
-              w = max(log_weight_unnorm);
-              log_cost_norm = w + log(sum(exp(log_weight_unnorm - w)));
-              log_weight_aux = log_weight_unnorm - log_cost_norm;
-              if max(isinf(log_weight_unnorm - log_cost_norm))==1
-                  disp('log inf within bisection');
-              end
-              W = max(log_weight_aux);
-              log_ESS(n+1) = -2*W - log( sum( exp( 2*(log_weight_aux - W) ) ) );
-              if log_ESS(n+1) - log(ESS(n)) > log(gamma_high)
-                  delta_a = delta(n+1);
-                  delta(n+1) = min([(delta_a+delta_b)/2 delta_max]);
-                  is_last_operation_increment = 1;
-                  if (delta_max-delta(n+1)) < delta_max/100
-                      exponent_likelihood(n+1) = exponent_likelihood(n) + delta(n+1);
-                      for i=1:n_samples
-                          if n < N
-                              log_update(i) = -0.5*n_ist*(exponent_likelihood(n+1)-exponent_likelihood(n))*log(particle(i).like_det)-...
-                                  ((exponent_likelihood(n+1)-exponent_likelihood(n))/(2*noise_std^2))*particle(i).log_like;
-                          end
-                      end
-                      if exponent_likelihood(n+1)>=1
-                          exponent_likelihood(n+1) = 1;
-                          log_ESS(n+1) = log(ESS(n)) + log( (gamma_high+gamma_low)/2 );
-                      end
-                      break;
-                  end
-              elseif log_ESS(n+1) - log(ESS(n)) < log(gamma_low)
-                  delta_b = delta(n+1);
-                  delta(n+1) = max([(delta_a+delta_b)/2 delta_min]);
-                  if (delta(n+1)-delta_min)<delta_min/10 ||(iterations>1 && is_last_operation_increment)
-                      exponent_likelihood(n+1) = exponent_likelihood(n) + delta(n+1);
-                      for i=1:n_samples
-                          if n < N
-                              log_update(i) = -0.5*n_ist*(exponent_likelihood(n+1)-exponent_likelihood(n))*log(particle(i).like_det)-...
-                                  ((exponent_likelihood(n+1)-exponent_likelihood(n))/(2*noise_std^2))*particle(i).log_like;
-                          end
-                      end
-                      if exponent_likelihood(n+1)>=1
-                          exponent_likelihood(n+1) = 1;
-                          log_ESS(n+1) = log(ESS(n)) + log((gamma_high+gamma_low)/2);
-                      end
-                      break;
-                  end
-                  is_last_operation_increment = 0;
-              end
-              exponent_likelihood(n+1) = exponent_likelihood(n) + delta(n+1);
-              if exponent_likelihood(n+1)>=1
-                  exponent_likelihood(n+1) = 1;
-                  log_ESS(n+1) = log(ESS(n)) + log((gamma_high+gamma_low)/2);
-              end
-              iterations = iterations+1;
-          end
+    if evol_exp == 0
+        is_last_operation_increment = 0;
+        if exponent_likelihood(n) == 1
+            exponent_likelihood(n+1) = 1.01;
+        else
+            delta_a = delta_min;
+            delta_b = delta_max;
+            delta(n+1) = delta_max;
+            exponent_likelihood(n+1) = exponent_likelihood(n) + delta(n+1);
+            log_ESS(n+1) = -Inf;
+            iterations = 1;
+            while (log_ESS(n+1) - log(ESS(n))) > log(gamma_high) || (log_ESS(n+1) - log(ESS(n))) < log(gamma_low)
+                for i=1:n_samples
+                    if n < N
+                        log_update(i) = -0.5*(exponent_likelihood(n+1)-exponent_likelihood(n))*...
+                                    (n_ist*log(particle(i).like_det) + n_ist*nsens*log(2*pi*particle(i).noise_std^2) + particle(i).log_like/(particle(i).noise_std^2));%-0.5*n_ist*(exponent_likelihood(n+1)-exponent_likelihood(n))*log(particle(i).like_det)-...
+                            %((exponent_likelihood(n+1)-exponent_likelihood(n))/(2*particle(i).noise_std^2))*particle(i).log_like;
+                    end
+                end
+                log_weight_unnorm = log(weights) + log_update;
+                w = max(log_weight_unnorm);
+                log_cost_norm = w + log(sum(exp(log_weight_unnorm - w)));
+                log_weight_aux = log_weight_unnorm - log_cost_norm;
+                if max(isinf(log_weight_unnorm - log_cost_norm))==1
+                    disp('log inf within bisection');
+                end
+                W = max(log_weight_aux);
+                log_ESS(n+1) = -2*W - log( sum( exp( 2*(log_weight_aux - W) ) ) );
+                if log_ESS(n+1) - log(ESS(n)) > log(gamma_high)
+                    delta_a = delta(n+1);
+                    delta(n+1) = min([(delta_a+delta_b)/2 delta_max]);
+                    is_last_operation_increment = 1;
+                    if (delta_max-delta(n+1)) < delta_max/100
+                        exponent_likelihood(n+1) = exponent_likelihood(n) + delta(n+1);
+                        for i=1:n_samples
+                            if n < N
+                                log_update(i) = -0.5*(exponent_likelihood(n+1)-exponent_likelihood(n))*...
+                                    (n_ist*log(particle(i).like_det) + n_ist*nsens*log(2*pi*particle(i).noise_std^2) + particle(i).log_like/(particle(i).noise_std^2));
+                            end
+                        end
+                        if exponent_likelihood(n+1)>=1
+                            exponent_likelihood(n+1) = 1;
+                            log_ESS(n+1) = log(ESS(n)) + log( (gamma_high+gamma_low)/2 );
+                        end
+                        break;
+                    end
+                elseif log_ESS(n+1) - log(ESS(n)) < log(gamma_low)
+                    delta_b = delta(n+1);
+                    delta(n+1) = max([(delta_a+delta_b)/2 delta_min]);
+                    if (delta(n+1)-delta_min)<delta_min/10 ||(iterations>1 && is_last_operation_increment)
+                        exponent_likelihood(n+1) = exponent_likelihood(n) + delta(n+1);
+                        for i=1:n_samples
+                            if n < N
+                                log_update(i) = -0.5*(exponent_likelihood(n+1)-exponent_likelihood(n))*...
+                                    (n_ist*log(particle(i).like_det) + n_ist*nsens*log(2*pi*particle(i).noise_std^2) + particle(i).log_like/(particle(i).noise_std^2));
+                            end
+                        end
+                        if exponent_likelihood(n+1)>=1
+                            exponent_likelihood(n+1) = 1;
+                            log_ESS(n+1) = log(ESS(n)) + log((gamma_high+gamma_low)/2);
+                        end
+                        break;
+                    end
+                    is_last_operation_increment = 0;
+                end
+                exponent_likelihood(n+1) = exponent_likelihood(n) + delta(n+1);
+                if exponent_likelihood(n+1)>=1
+                    exponent_likelihood(n+1) = 1;
+                    log_ESS(n+1) = log(ESS(n)) + log((gamma_high+gamma_low)/2);
+                end
+                iterations = iterations+1;
+            end
+        end
+    else
+        if n==evol_exp
+            exponent_likelihood(n+1) = 1.1;
+        else
+            e = logspace(-5,0, evol_exp);
+            exponent_likelihood(n+1) = e(n+1);
+        end
+        
     end
     n = n + 1;
 end
@@ -529,9 +559,9 @@ if numel(est_dip)>0
     estimated_dipoles = est_dip(find(est_dip(:,4)==n),5);
     G_r = zeros(nsens,ncomp*numel(estimated_dipoles));
     for kk = 1:numel(estimated_dipoles)
-        G_r(:,ncomp*(kk-1)+1:ncomp*kk) = leadfield(:,ncomp*(estimated_dipoles(kk)-1)+1:ncomp*estimated_dipoles(kk), ind_lead);
+        G_r(:,ncomp*(kk-1)+1:ncomp*kk) = leadfield(:,ncomp*(estimated_dipoles(kk)-1)+1:ncomp*estimated_dipoles(kk));
     end
-    cov_Qincomplex = dipmom_std^2 * eye(ncomp*numel(estimated_dipoles));
+    cov_Qincomplex = (dipmom_std/scaling_factor)^2 * eye(ncomp*numel(estimated_dipoles));
     K_matrix = cov_Qincomplex * G_r' * inv(G_r * cov_Qincomplex * G_r' + cov_noise);
     for t = 1:n_ist
         qmean_comp = K_matrix * data(:,t);
@@ -565,15 +595,14 @@ result.neighboursp = neighboursp;
 
 % actual results:
 result.pmap = pmap(1:size(V,1),1:n,1:NDIP);
+result.pmap_singdip = pmap_singdip(:,:,1:n);
 result.mod_sel = mod_sel(:,1:n);
-result.lead_sel = lead_sel(:,1:n);
 result.estimated_dipoles = estimated_dipoles;
 result.Q_estimated = Q_estimated;
-result.MCsamples = MCsamples;
+result.MCsamples = MCsamples{1, end}.all_particles;
 result.AllWeights = AllWeights(1:n,:);
 result.est_dip = est_dip;
 result.QV_estimated = QV_estimated;
-result.estimated_width = stds;
 
 % algorithm diagnostics
 result.final_it = n;
@@ -582,7 +611,12 @@ result.resampling_done = resampling_done(1:n);
 result.ESS = ESS;
 result.best_particle = best_particle;
 result.TODAY = date;
-toc
+result.scaling_factor = scaling_factor;
+
+[result.noise_cm_hy, result.noise_map_hy, v_noise, v_weight] = noise_estimates(result);
+result.v_noise = v_noise; 
+result.v_weight = v_weight;
+result.cpu_time = cputime - tStart;
 end
 
 
@@ -602,12 +636,12 @@ end
 particle.dipole(r).c = location_proposed;
 end
 
-function [est_num, est_c, dipole_std] = point_estimation(particles, weights, V, NDIP)
-n_samples = length(weights);
-dipole_std = [];
+function [est_num, est_c, pmap_singdip] = point_estimation(particles, weigths, V, NDIP)
+n_samples = length(weigths);
 mod_sel = zeros(NDIP*10, 1);
+pmap_singdip = zeros(size(V,1),NDIP);
 for i = 1:n_samples
-    mod_sel(particles(i).nu+1) = mod_sel(particles(i).nu+1) + weights(i);
+    mod_sel(particles(i).nu+1) = mod_sel(particles(i).nu+1) + weigths(i);
 end
 [~, est_num] = max(mod_sel);
 est_num = est_num - 1;
@@ -618,7 +652,6 @@ if est_num == 0
     est_c = [];
 else
     N_sel_part = 0;
-    % select particles with the desired number of dipoles
     for i = 1:n_samples
         %    disp(particles(i).nu)
         if particles(i).nu == est_num
@@ -627,21 +660,18 @@ else
         end
     end
     particles = particles(sel_particles);
-    weights = weights(sel_particles);
+    weigths = weigths(sel_particles);
     dipoles = zeros(N_sel_part, est_num);
-
-    % insert all dipoles in "dipoles" variable
     for i_part = 1:N_sel_part
         for j_dip = 1:est_num
             dipoles(i_part,j_dip) = particles(i_part).dipole(j_dip).c;
         end
     end
-    [~ , max_part] = max(weights);
+    [~ , max_part] = max(weigths);
     c_max_part = zeros(1, est_num);
     for i_dip = 1:est_num
         c_max_part(i_dip) = particles(max_part).dipole(i_dip).c;
     end
-    % provide homogeneous ordering of dipoles
     for i_part = 1:N_sel_part
         c_i = dipoles(i_part,:);
         all_perm = perms(c_i);
@@ -655,40 +685,33 @@ else
         [~, sel_perm] = min(OSPA);
         dipoles(i_part,:) = all_perm(sel_perm,:);
     end
-    pmap_sing_dip = zeros(size(V,1), est_num);
-
+    
     for i_dip = 1:est_num
+        
         for i_part = 1:N_sel_part
-            pmap_sing_dip(dipoles(i_part,i_dip), i_dip) =  pmap_sing_dip(dipoles(i_part,i_dip), i_dip) + weights(i_part);
+            pmap_singdip(dipoles(i_part,i_dip), i_dip) =  pmap_singdip(dipoles(i_part,i_dip), i_dip) + weigths(i_part);
         end
+        
     end
-    % compute mean location and variance for each estimated dipole
-    dipole_mean = zeros(est_num,3);
-    dipole_std = dipole_mean;
-    for i_dip = 1:est_num
-        dipole_mean(i_dip,:) = sum(V(dipoles(:,i_dip),:).*weights')/sum(weights);
-        dipole_std(i_dip,:) = sqrt(sum((V(dipoles(:,i_dip),:)-dipole_mean(i_dip,:)).^2.*weights')/sum(weights));
-        disp(['mean dipole locations = ',num2str(dipole_mean(i_dip,:)), ' and dipole std = ', num2str(dipole_std(i_dip,:))])
-    end
-    [~, est_c] = max(pmap_sing_dip);
+    [~, est_c] = max(pmap_singdip(:,1:est_num));
 end
 end
 
-function [particle] = prior_and_like(particle, leadfield, data, lambda_prior, dipmom_std, nsens, ncomp, fact, noise_std, n_ist)
-particle.prior = 1/fact(particle.nu+1) * exp(-lambda_prior) * lambda_prior^particle.nu / particle.dipmom_std;
+function [particle] = prior_and_like(particle, leadfield, data, lambda_prior, nsens, ncomp, fact, n_ist, noise_std)
+particle.prior = 1/fact(particle.nu+1) * exp(-lambda_prior) * ...
+    lambda_prior^particle.nu / particle.dipmom_std * gampdf(particle.noise_std, 2 ,noise_std * 4);%1 / particle.noise_std;
+
 G_r = zeros(nsens,ncomp*particle.nu);
 for kk = 1:particle.nu
-    %    particle.prior = particle.prior*1/size(leadfield,2)*3;
-    G_r(:,ncomp*(kk-1)+1:ncomp*kk) = leadfield(:,ncomp*(particle.dipole(kk).c-1)+1:ncomp*particle.dipole(kk).c, particle.dipole(kk).leadfield);
+    G_r(:,ncomp*(kk-1)+1:ncomp*kk) = leadfield(:,ncomp*(particle.dipole(kk).c-1)+1:ncomp*particle.dipole(kk).c);
 end
 
-cov_likelihood_risc = (particle.dipmom_std/noise_std)^2 *G_r*G_r' + eye(nsens);
+cov_likelihood_risc = (particle.dipmom_std/particle.noise_std)^2 *G_r*G_r' + eye(nsens);
 cov_likelihood_risc_inv = inv(cov_likelihood_risc);
 particle.like_det = det(cov_likelihood_risc);
 particle.log_like = 0;
 for t = 1:n_ist
     particle.log_like =  particle.log_like + data(:,t)'*cov_likelihood_risc_inv*data(:,t);
-    %  particle.log_like =  particle.log_like + data(:,t)'*(cov_likelihood_risc\data(:,t));
 end
 end
 
@@ -698,7 +721,7 @@ if particle.nu >0
     for r = DipoleDying+1:particle.nu
         particle.dipole(r-1) = particle.dipole(r);
     end
-    particle.dipole(particle.nu) = struct('c', 0, 'qmean', zeros(3,1), 'qvar', zeros(3), 'leadfield', 1);
+    particle.dipole(particle.nu) = struct('c', 0, 'qmean', zeros(3,1), 'qvar', zeros(3));
     particle.nu = particle.nu - 1;
 else
     DipoleDying = -1;
@@ -717,23 +740,55 @@ for i = 1:size(neighbours,1)
 end
 end
 
-function neighbours = compute_neighbours(vertices, radius)
-MdlKDT = KDTreeSearcher(vertices);
-neighbours_aux = rangesearch(MdlKDT,vertices,radius);
-
-max_length = 0;
-for i = 1 : length(neighbours_aux)
-
-    max_length = max(length(neighbours_aux{i}),max_length);
-
+function[neighbours]=compute_neighbours(vertices, radius)
+neighbours=zeros(size(vertices,1),1000);
+for i = 1 : size(vertices,1)
+    clear aux3
+    aux1 = vertices(i,:);
+    aux2 = repmat(aux1,size(vertices,1),1);
+    diff = vertices-aux2;
+    diff = diff.^2;
+    somma = sum(diff');
+    somma = somma';
+    dist = sqrt(somma);
+    [dist_riord,ind_riord] = sort(dist,'ascend');
+    aux3 = find(dist_riord<radius);
+    neighbours(i,1:size(aux3,1)) = ind_riord(aux3)';
+end
 end
 
-neighbours = zeros(length(neighbours_aux),max_length);
+function [noise_cm_hy, noise_map_hy, v_noise, v_weight] = noise_estimates(posterior)
+n_bins = 20;
 
-for i = 1 : length(neighbours_aux)
-
-    length_aux = length(neighbours_aux{i});
-    neighbours(i,1:length_aux) = neighbours_aux{i};
-
+v_noise = zeros(posterior.n_samples, 1);
+v_weight = zeros(posterior.n_samples, 1);
+for i=1:posterior.n_samples
+    v_noise(i) =  posterior.MCsamples(i).noise_std/posterior.scaling_factor;
+    v_weight(i) = posterior.AllWeights(end, i);
 end
+
+noise_cm_hy = sum(v_noise .* v_weight);
+
+interval = [min(v_noise), max(v_noise)];
+len_interval = abs(interval(2) - interval(1));
+left_bin = zeros(n_bins, 1);
+rigtht_bin = zeros(n_bins, 1);
+center_bin = zeros(n_bins, 1);
+v_weight_bin = zeros(n_bins, 1);
+
+for i=1:n_bins
+    left_bin(i) = interval(1) + i * len_interval / n_bins;
+    rigtht_bin(i) = interval(1) + (i + 1) * len_interval / n_bins;
+    center_bin(i) = 0.5 * (left_bin(i) + rigtht_bin(i));
+    
+    for p=1:numel(v_noise)
+        if v_noise(p) < rigtht_bin(i) && v_noise(p) > left_bin(i)
+            v_weight_bin(i) = v_weight_bin(i) + v_weight(p);
+        end
+    end
+end
+
+[~, idx_max] = max(v_weight_bin);
+noise_map_hy = center_bin(idx_max);
+
 end
