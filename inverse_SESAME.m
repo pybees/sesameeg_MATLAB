@@ -956,12 +956,13 @@ for i=1:n_bins
     left_bin(i) = interval(1) + i * len_interval / n_bins;
     rigtht_bin(i) = interval(1) + (i + 1) * len_interval / n_bins;
     center_bin(i) = 0.5 * (left_bin(i) + rigtht_bin(i));
-    
+
     for p=1:numel(v_noise)
         if v_noise(p) < rigtht_bin(i) && v_noise(p) > left_bin(i)
             v_weight_bin(i) = v_weight_bin(i) + v_weight(p);
         end
     end
+end
 end
 
 function loc = sample_prior_locs(prior_locs)
