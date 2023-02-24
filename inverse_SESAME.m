@@ -129,6 +129,7 @@ end
 if isfield(cfg,'t_stop')
     t_stop = cfg.t_stop;
 end
+
 if isfield(cfg,'bool_hyper_q')
     bool_hyper_q = cfg.bool_hyper_q;
     disp(['hyperprior on dipmom std set as: ', num2str(bool_hyper_q)]);
@@ -244,11 +245,13 @@ end
 
 % set parameters
 n_ist = size(data, 2);
+
 N = 2000;           % initial max number of iterations, determines array size
 C = size(V,1);      % number of voxels
 nsens = size(leadfield,1);  % number of sensors
 ncomp = size(leadfield,2)/size(sourcespace,1); % 3 if free orientation, 1 if cortically constrained
 NDIP = 6;           % maximum number of dipoles
+
 mean_Qin = zeros(3,1); % mean of the Gaussian prior on the dipole moment
 
 cov_Qin = dipmom_std^2 * eye(3); % covariance of Gaussian prior on the dipole moment
@@ -259,15 +262,15 @@ gamma_high = 0.99; gamma_low = 0.9; % acceptable interval for the drop in the Ef
 dipmom_range = 3; % currently fixed hyperparameter, log--range of the hyperprior on dipmom_std
 noise_range = 3; % currently fixed hyperparameter, log--range of the hyperprior on noise_std
 noise_std_proposal = 10;
-n_lead = size(leadfield,3);
 
+n_lead = size(leadfield,3);
 
 exponent_likelihood(1) = 0;
 exponent_likelihood(2) = 0;
 
 % define structures
 for j = 1:NDIP
-    dipole(j) = struct('c', 0, 'qmean', zeros(3,1), 'qvar', zeros(3), 'leadfield', 1);
+    dipole(j) = struct('c', 0, 'qmean', zeros(3,1), 'qvar', zeros(3));
 end
 for i = 1:n_samples
     particle(i) = struct('nu',0,'dipole',dipole, 'prior', 1, 'log_like', 0, 'like_det',1, 'dipmom_std', 1, 'noise_std', noise_std);
@@ -301,6 +304,7 @@ for i = 1:n_samples
     end
 
     particle(i) = prior_and_like(particle(i), leadfield, data, lambda_prior, nsens, ncomp, fact, n_ist, prior_locs);
+
     if isinf(particle(i).log_like)
         disp('Problem');
     end
@@ -314,7 +318,6 @@ weights = weights ./ sum(weights);
 pmap = zeros(size(V,1), N, NDIP);
 pmap_singdip = zeros(size(V,1),NDIP,N);
 mod_sel = zeros(NDIP+1,N);
-lead_sel = zeros(n_lead,N);
 est_dip = [];
 estimated_dipoles = [];
 Q_estimated = [];
@@ -322,9 +325,6 @@ QV_estimated = [];
 kkk = 1;
 for i = 1:n_samples
     mod_sel(particle(i).nu+1,n) = mod_sel(particle(i).nu+1,n) + weights(i);
-    for j=1:particle(i).nu
-        lead_sel(particle(i).dipole(j).leadfield,n) = lead_sel(particle(i).dipole(j).leadfield,n) + weights(i)/particle(i).nu;
-    end
     if particle(i).nu <=NDIP
         for r = 1:particle(i).nu
             pmap(particle(i).dipole(r).c, n, particle(i).nu) =  pmap(particle(i).dipole(r).c, n, particle(i).nu) + weights(i);
@@ -397,11 +397,11 @@ while exponent_likelihood(n) <= 1
         weights = exp(log_weight_unnorm-log_cost_norm);
     end
     AllWeights(n,:) = weights;
-
+    
     % MCMC step
     for i = 1:n_samples
         particle_proposed = particle(i);
-
+        
         % MH for the hyperparameter dipmom_std
         if bool_hyper_q == true
             particle_proposed = particle(i);
@@ -467,6 +467,7 @@ while exponent_likelihood(n) <= 1
                 end
             end
         end
+
         % Add/Remove dipole (RJ step)
         BirthOrDeath = rand;
         if BirthOrDeath < Q_birth && particle_proposed.nu < NDIP
@@ -474,11 +475,10 @@ while exponent_likelihood(n) <= 1
             r = particle_proposed.nu;
             particle_proposed.dipole(r).qmean = mean_Qin;
             particle_proposed.dipole(r).qvar = cov_Qin;
-            particle_proposed.dipole(r).leadfield = randi(n_lead);
         elseif BirthOrDeath > 1-Q_death
             [~, particle_proposed] = remove_dipole(particle_proposed);
         end
-
+        
         if particle_proposed.nu ~= particle(i).nu
             particle_proposed = prior_and_like(particle_proposed, leadfield, data, lambda_prior, nsens, ncomp, fact, n_ist, prior_locs);
 
@@ -538,9 +538,6 @@ while exponent_likelihood(n) <= 1
     % on-line estimates
     for i = 1:n_samples
         mod_sel(particle(i).nu+1,n) = mod_sel(particle(i).nu+1,n) + weights(i);
-        for j=1:particle(i).nu
-            lead_sel(particle(i).dipole(j).leadfield,n) = lead_sel(particle(i).dipole(j).leadfield,n) + weights(i)/particle(i).nu;
-        end
         if particle(i).nu <=NDIP
             for r = 1:particle(i).nu
                 pmap(particle(i).dipole(r).c,n, particle(i).nu) =  pmap(particle(i).dipole(r).c,n, particle(i).nu) + weights(i);
@@ -552,12 +549,14 @@ while exponent_likelihood(n) <= 1
     disp(strcat(['Estimated number of dipoles: ', num2str(ind_mod-1)]));
     disp(strcat(['Estimated number of leadfield: ', num2str(ind_lead)]));
     disp(strcat(['Model selsection: ', num2str(mod_sel(1:4,n)')]));
+
     [~, eee,pmap_singdip(:,:,n)] = point_estimation(particle, weights, V, NDIP);
     for i = 1:numel(eee)
         est_dip(kkk,:) = [V(eee(i),:) n eee(i)];
         kkk=kkk+1;
         disp(strcat(['Estimated location of dipole ', num2str(i), ': vertex number ' num2str(eee(i))]));
     end
+
     v_noise = zeros(n_samples, 1);
     v_weight = zeros(n_samples, 1);
     for i=1:n_samples
@@ -565,9 +564,8 @@ while exponent_likelihood(n) <= 1
         v_weight(i) = weights(i);
     end
     disp(strcat(['Conditional Mean noise std: ', num2str(sum(v_noise .* v_weight))]));
-
+    
     MCsamples{n}.all_particles = particle;
-
     % optional plot of current iteration
     if isfield(cfg,'plot')
         if strcmp(cfg.plot,'surf')==1 && isfield(cfg, 'tris') && isfield(cfg,'V_infl') && mod(n,5)==0
@@ -660,7 +658,6 @@ while exponent_likelihood(n) <= 1
             e = logspace(-5,0, evol_exp);
             exponent_likelihood(n+1) = e(n+1);
         end
-
         for i=1:n_samples
             if n < N
                 log_update(i) = -0.5*(exponent_likelihood(n+1)-exponent_likelihood(n))*...
@@ -751,6 +748,7 @@ result.estimated_dipoles = estimated_dipoles;
 result.Q_estimated = Q_estimated;
 result.MCsamples = MCsamples{1, end}.all_particles;
 result.AllMCsamples = MCsamples;
+
 result.AllWeights = AllWeights(1:n,:);
 result.est_dip = est_dip;
 result.QV_estimated = QV_estimated;
@@ -868,7 +866,7 @@ cov_likelihood_risc_inv = eye(nsens) - (particle.dipmom_std/particle.noise_std)^
     *inv(eye(ncomp*particle.nu) + G_r'* (particle.dipmom_std/particle.noise_std)^2 *G_r)*G_r';
 
 cov_likelihood_risc = (particle.dipmom_std/particle.noise_std)^2 *G_r*G_r' + eye(nsens);
-% cov_likelihood_risc_inv = inv(cov_likelihood_risc);
+
 particle.like_det = det(cov_likelihood_risc);
 particle.log_like = 0;
 for t = 1:n_ist
@@ -883,6 +881,7 @@ if particle.nu >0
         particle.dipole(r-1) = particle.dipole(r);
     end
     particle.dipole(particle.nu) = struct('c', 0, 'qmean', zeros(3,1), 'qvar', zeros(3), 'leadfield', Inf);
+
     particle.nu = particle.nu - 1;
 else
     DipoleDying = -1;
@@ -952,6 +951,17 @@ end
 [~, idx_max] = max(v_weight_bin);
 noise_map_hy = center_bin(idx_max);
 
+
+for i=1:n_bins
+    left_bin(i) = interval(1) + i * len_interval / n_bins;
+    rigtht_bin(i) = interval(1) + (i + 1) * len_interval / n_bins;
+    center_bin(i) = 0.5 * (left_bin(i) + rigtht_bin(i));
+    
+    for p=1:numel(v_noise)
+        if v_noise(p) < rigtht_bin(i) && v_noise(p) > left_bin(i)
+            v_weight_bin(i) = v_weight_bin(i) + v_weight(p);
+        end
+    end
 end
 
 function loc = sample_prior_locs(prior_locs)
@@ -964,5 +974,6 @@ while outer_part(i) < u
     i = i + 1;
 end
 loc = nonzero_prior_locs(i);
+
 
 end
