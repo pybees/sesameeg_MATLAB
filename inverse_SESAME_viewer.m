@@ -62,7 +62,7 @@ for t = posterior.final_it
   title('Input data')
   
   subplot(3,3,6)
-  bar([0:size(posterior.mod_sel,1)],posterior.mod_sel(:,t))  
+  bar([0:size(posterior.mod_sel,1)-1],posterior.mod_sel(:,t))  
   xlabel('N of dipoles')
   title('posterior probability')
   subplot(3,3,9)
