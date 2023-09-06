@@ -186,8 +186,8 @@ if isempty(bool_hyper_q)
     disp('Used hyperprior on dipmom std');
 end
 if isempty(bool_hyper_n)
-    bool_hyper_n = true;
-    disp('Used hyperprior on noise std');
+    bool_hyper_n = false;
+    disp('Not used hyperprior on noise std');
 end
 if isempty(evol_exp)
     evol_exp = 0;
