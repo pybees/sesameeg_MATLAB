@@ -45,6 +45,7 @@ for t = posterior.final_it
       sourcespace(posterior.estimated_dipoles(i),3),...
       strcat('x',colors(i)),'linewidth',3,'markersize',amps(i));
   end
+  view(2);
   title('posterior map')
   
   subplot(3,3,[1 2 3])
