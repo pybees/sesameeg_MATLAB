@@ -747,11 +747,11 @@ if numel(est_dip)>0
     count = 0;
     for p=1:numel(particle)
         if particle(p).nu == numel(estimated_dipoles)
-            dipmom_std_pm = dipmom_std_pm + particle(p).dipmom_std;
+            dipmom_std_pm = dipmom_std_pm + particle(p).dipmom_std*particle(p).weight;
             count = count +1;
         end
     end
-    dipmom_std_pm = dipmom_std_pm/numel(dipmom_std_pm);
+    dipmom_std_pm = dipmom_std_pm/count;
 
     % Estimating dipole moments
     G_r = zeros(nsens,ncomp*numel(estimated_dipoles));
@@ -1022,4 +1022,5 @@ while outer_part(i) < u
     i = i + 1;
 end
 loc = nonzero_prior_locs(i);
+
 end
