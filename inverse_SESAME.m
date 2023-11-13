@@ -186,26 +186,26 @@ if isempty(lambda_prior)
         disp(['Poisson parameter set automatically to: ', num2str(lambda_prior)]);
     end
 end
+if isempty(t_start)
+    t_start = 1;
+end
+if isempty(t_stop)
+    t_stop = size(full_data,2);
+end
 if isempty(noise_std)
-    noise_std = 0.17 * max(max(abs(full_data)));
+    noise_std = 0.2 * max(max(abs(data(:, t_start:t_stop))));
     if verbose==true
         disp(['Noise std set automatically to: ', num2str(noise_std)]);
     end
 end
 if isempty(dipmom_std)
-    dipmom_std = 15*max(max(abs(data)))/max(max(max(abs(leadfield))));
+    dipmom_std = 1.5*max(max(abs(data(:, t_start:t_stop))))/max(max(max(abs(leadfield))));
     if verbose==true
         disp(['Dipmom std set automatically to: ', num2str(dipmom_std)]);
     end
 end
 if isempty(n_samples)
     n_samples = 100;
-end
-if isempty(t_start)
-    t_start = 1;
-end
-if isempty(t_stop)
-    t_stop = size(full_data,2);
 end
 if isempty(bool_hyper_q)
     bool_hyper_q = true;
@@ -747,7 +747,7 @@ if numel(est_dip)>0
     count = 0;
     for p=1:numel(particle)
         if particle(p).nu == numel(estimated_dipoles)
-            dipmom_std_pm = dipmom_std_pm + particle(p).dipmom_std*particle(p).weight;
+            dipmom_std_pm = dipmom_std_pm + particle(p).dipmom_std*weights(p);
             count = count +1;
         end
     end
