@@ -87,6 +87,7 @@ function [result] = inverse_SESAME(full_data, leadfield, sourcespace, cfg)
 
 % Copyright (C) 2019 Gianvittorio Luria, Sara Sommariva, Alberto Sorrentino
 
+verbose = [];
 lambda_prior = [];
 evol_exp = [];
 noise_std = [];
@@ -104,9 +105,19 @@ Q_death = [];
 t_start = 1;
 t_stop = size(full_data,2);
 
+if isfield(cfg,'verbose')
+    verbose = cfg.verbose;
+end
+if isempty(verbose)
+    verbose = true;
+end
+
+
 if isfield(cfg,'lambda_prior')
     lambda_prior = cfg.lambda_prior;
-    disp(['Poisson parameter set by the user to: ', num2str(lambda_prior)]);
+    if verbose==true
+        disp(['Poisson parameter set by the user to: ', num2str(lambda_prior)]);
+    end
 end
 if isfield(cfg,'noise_std')
     noise_std = cfg.noise_std;
@@ -131,11 +142,15 @@ if isfield(cfg,'t_stop')
 end
 if isfield(cfg,'bool_hyper_q')
     bool_hyper_q = cfg.bool_hyper_q;
-    disp(['hyperprior on dipmom std set as: ', num2str(bool_hyper_q)]);
+    if verbose==true
+        disp(['hyperprior on dipmom std set as: ', num2str(bool_hyper_q)]);
+    end
 end
 if isfield(cfg,'evol_exp')
     evol_exp = cfg.evol_exp;
-    disp(['Number of iterations set at: ', num2str(evol_exp)]);
+    if verbose==true
+        disp(['Number of iterations set at: ', num2str(evol_exp)]);
+    end
 end
 if isfield(cfg,'Q_birth')
     Q_birth = cfg.Q_birth;
@@ -145,7 +160,9 @@ if isfield(cfg,'Q_death')
 end
 if isfield(cfg,'bool_hyper_n')
     bool_hyper_n = cfg.bool_hyper_n;
-    disp(['hyperprior on noise std set as: ', num2str(bool_hyper_n)]);
+    if verbose==true
+        disp(['hyperprior on noise std set as: ', num2str(bool_hyper_n)]);
+    end
 end
 if isfield(cfg, 'scaling_factor')
     scaling_factor = cfg.scaling_factor;
@@ -155,22 +172,31 @@ if isfield(cfg, 'noise_covariance')
 end
 if isfield(cfg,'prior_locs')
     prior_locs = cfg.prior_locs;
-    disp('Used prior locations given by the user');
+    prior_locs = prior_locs/sum(prior_locs);
+    if verbose==true
+        disp('Used prior locations given by the user');
+    end
 end
 
 data = full_data;
 
 if isempty(lambda_prior)
     lambda_prior = 0.25;
-    disp(['Poisson parameter set automatically to: ', num2str(lambda_prior)]);
+    if verbose==true
+        disp(['Poisson parameter set automatically to: ', num2str(lambda_prior)]);
+    end
 end
 if isempty(noise_std)
-    noise_std = 0.17 * max(max(abs(data)));
-    disp(['Noise std set automatically to: ', num2str(noise_std)]);
+    noise_std = 0.17 * max(max(abs(full_data)));
+    if verbose==true
+        disp(['Noise std set automatically to: ', num2str(noise_std)]);
+    end
 end
 if isempty(dipmom_std)
     dipmom_std = 15*max(max(abs(data)))/max(max(max(abs(leadfield))));
-    disp(['Dipmom std set automatically to: ', num2str(dipmom_std)]);
+    if verbose==true
+        disp(['Dipmom std set automatically to: ', num2str(dipmom_std)]);
+    end
 end
 if isempty(n_samples)
     n_samples = 100;
@@ -183,7 +209,9 @@ if isempty(t_stop)
 end
 if isempty(bool_hyper_q)
     bool_hyper_q = true;
-    disp('Used hyperprior on dipmom std');
+    if verbose==true
+        disp('Used hyperprior on dipmom std');
+    end
 end
 if isempty(bool_hyper_n)
     bool_hyper_n = false;
@@ -191,7 +219,9 @@ if isempty(bool_hyper_n)
 end
 if isempty(evol_exp)
     evol_exp = 0;
-    disp('Adaptive number of iterations');
+    if verbose==true
+        disp('Adaptive number of iterations');
+    end
 end
 % probability of proposing a birth/death
 if isempty(Q_birth)
@@ -208,7 +238,9 @@ if isempty(noise_covariance)
 end
 if isempty(prior_locs)
     prior_locs = 1/(size(sourcespace,1)) * ones(size(sourcespace,1),1);
-    disp('Used uniform prior locations');
+    if verbose==true
+        disp('Used uniform prior locations');
+    end
 end
 
 if (size(full_data,2)>1)
@@ -233,8 +265,10 @@ noise_std = scaling_factor * noise_std;
 if isempty(neighbours)
     radius = 1.5 * ((max(V(:,1))-min(V(:,1))) * (max(V(:,2))-min(V(:,2))) * (max(V(:,3))-min(V(:,3)))/ size(V,1) ) ^(1/3) ;
     neighbours = compute_neighbours(V, radius);
-    disp(strcat(['neighbours matrix computed, max neighbours ', ...
-        num2str(size(neighbours,2))]));
+    if verbose==true
+        disp(strcat(['neighbours matrix computed, max neighbours ', ...
+            num2str(size(neighbours,2))]));
+    end
     neighboursp = compute_neigh_prob(V, neighbours, radius);
 end
 if isempty(neighboursp)
@@ -340,12 +374,16 @@ n = 2;
 resampling_done = zeros(1,N);
 while exponent_likelihood(n) <= 1
     if n>3
-        disp('----------------------------------------------------------------')
-        disp(strcat(['Iteration ', num2str(n), ...
-            ' (Expected: ', ...
-            num2str(ceil((-log(exponent_likelihood(3)))/...
-            (log(exponent_likelihood(n)) - log(exponent_likelihood(3))) * n )),')',...
-            ' -- Exponent = ', num2str(exponent_likelihood(n))]))
+        if evol_exp==0
+        expected = ceil((-log(exponent_likelihood(3)))/(log(exponent_likelihood(n)) - log(exponent_likelihood(3))) * n );
+        else
+            expected = evol_exp;
+        end
+        if verbose==true
+            disp('----------------------------------------------------------------')
+            disp(strcat(['Iteration ', num2str(n), ...
+                ' (Expected: ', num2str(expected),')', ' -- Exponent = ', num2str(exponent_likelihood(n))]))
+        end
     end
     [max_weight, ind_max_weight] = max(weights);
     best_particle(n-1) = particle(ind_max_weight);
@@ -365,9 +403,11 @@ while exponent_likelihood(n) <= 1
     end
     % Resample particles if ESS too low
     if ESS(n) < n_samples/2
-        disp(' ---------- ');
-        disp('Resampling');
-        disp(' ---------- ');
+        if verbose==true
+            disp(' ---------- ');
+            disp('Resampling');
+            disp(' ---------- ');
+        end
         resampling_done(n) = 1;
         ESS(n) = n_samples;
         partition_weights = cumsum(weight_resampling);
@@ -467,6 +507,7 @@ while exponent_likelihood(n) <= 1
                 end
             end
         end
+
         % Add/Remove dipole (RJ step)
         BirthOrDeath = rand;
         if BirthOrDeath < Q_birth && particle_proposed.nu < NDIP
@@ -549,14 +590,20 @@ while exponent_likelihood(n) <= 1
     end
     [~, ind_mod] = max(mod_sel(:,n));
     [~, ind_lead] = max(lead_sel(:,n));
-    disp(strcat(['Estimated number of dipoles: ', num2str(ind_mod-1)]));
-    disp(strcat(['Estimated number of leadfield: ', num2str(ind_lead)]));
-    disp(strcat(['Model selsection: ', num2str(mod_sel(1:4,n)')]));
+    if verbose==true
+        disp(strcat(['Estimated number of dipoles: ', num2str(ind_mod-1)]));
+        if n_lead > 1
+            disp(strcat(['Estimated number of leadfield: ', num2str(ind_lead)]));
+        end
+        disp(strcat(['Model selsection: ', num2str(mod_sel(1:4,n)')]));
+    end
     [~, eee,pmap_singdip(:,:,n)] = point_estimation(particle, weights, V, NDIP);
     for i = 1:numel(eee)
         est_dip(kkk,:) = [V(eee(i),:) n eee(i)];
         kkk=kkk+1;
-        disp(strcat(['Estimated location of dipole ', num2str(i), ': vertex number ' num2str(eee(i))]));
+        if verbose==true
+            disp(strcat(['Estimated location of dipole ', num2str(i), ': vertex number ' num2str(eee(i))]));
+        end
     end
     v_noise = zeros(n_samples, 1);
     v_weight = zeros(n_samples, 1);
@@ -564,7 +611,9 @@ while exponent_likelihood(n) <= 1
         v_noise(i) =  particle(i).noise_std/scaling_factor;
         v_weight(i) = weights(i);
     end
-    disp(strcat(['Conditional Mean noise std: ', num2str(sum(v_noise .* v_weight))]));
+    if verbose==true && bool_hyper_n==true
+        disp(strcat(['Conditional Mean noise std: ', num2str(sum(v_noise .* v_weight))]));
+    end
 
     MCsamples{n}.all_particles = particle;
 
@@ -693,12 +742,23 @@ if numel(est_dip)>0
         est_lead = ones(1,numel(estimated_dipoles));
     end
 
+    % Estimated dipmom_std
+    dipmom_std_pm = 0;
+    count = 0;
+    for p=1:numel(particle)
+        if particle(p).nu == numel(estimated_dipoles)
+            dipmom_std_pm = dipmom_std_pm + particle(p).dipmom_std;
+            count = count +1;
+        end
+    end
+    dipmom_std_pm = dipmom_std_pm/numel(dipmom_std_pm);
+
     % Estimating dipole moments
     G_r = zeros(nsens,ncomp*numel(estimated_dipoles));
     for kk = 1:numel(estimated_dipoles)
         G_r(:,ncomp*(kk-1)+1:ncomp*kk) = leadfield(:,ncomp*(estimated_dipoles(kk)-1)+1:ncomp*estimated_dipoles(kk), est_lead(kk));
     end
-    cov_Qincomplex = (dipmom_std/scaling_factor)^2 * eye(ncomp*numel(estimated_dipoles));
+    cov_Qincomplex = (dipmom_std_pm/scaling_factor)^2 * eye(ncomp*numel(estimated_dipoles));
     K_matrix = cov_Qincomplex * G_r' * inv(G_r * cov_Qincomplex * G_r' + cov_noise);
     for t = 1:n_ist
         qmean_comp = K_matrix * data(:,t);
@@ -787,7 +847,6 @@ while is_location_new == 0
 end
 particle.dipole(r).c = location_proposed;
 end
-
 
 function [est_num, est_c, pmap_singdip] = point_estimation(particles, weigths, V, NDIP)
 n_samples = length(weigths);
@@ -963,5 +1022,4 @@ while outer_part(i) < u
     i = i + 1;
 end
 loc = nonzero_prior_locs(i);
-
 end
