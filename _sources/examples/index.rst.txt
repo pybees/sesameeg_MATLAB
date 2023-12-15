@@ -47,6 +47,6 @@ This script runs the SESAME algorithm on a real dataset provided...
 
    Plot of the SESAME output provided by `inverse_SESAME_viewer` function
    
-**Download** script: :download:`script_run_SESAME.m <script_run_SESAME.m>`
+**Download** script: :download:`script_run_SESAME.m <../../script_run_SESAME.m>`
 
 
