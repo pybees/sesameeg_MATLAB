@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>SESAMEEG &#8212; sesameeg_MATLAB  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="_static/bootstrap-sphinx.css?v=0bf093e7" />
+    <script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="IAS Demo" href="examples/index.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="_static/js/jquery-1.12.4.min.js"></script>
+<script type="text/javascript" src="_static/js/jquery-fix.js"></script>
+<script type="text/javascript" src="_static/bootstrap-3.4.1/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="#">
+          SESAMEEG</a>
+        <span class="navbar-text navbar-version pull-left"><b></b></span>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+                <li><a href="api.html">API</a></li>
+                <li><a href="examples/index.html">Examples</a></li>
+                <li><a href="explanation_algorithm.html">Model</a></li>
+                <li><a href="https://github.com/pybees/sesameeg_MATLAB">Github</a></li>
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul>
+<li class="toctree-l1"><a class="reference internal" href="examples/index.html">IAS Demo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="explanation_algorithm.html">Mathematical model</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">Page <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">SESAMEEG</a></li>
+<li><a class="reference internal" href="#bug-reports">Bug reports</a><ul>
+<li><a class="reference internal" href="#authors-of-the-code">Authors of the code</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#cite-our-work">Cite our work</a></li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+            
+            
+            
+              <li class="hidden-sm">
+<div id="sourcelink">
+  <a href="_sources/index.rst.txt"
+     rel="nofollow">Source</a>
+</div></li>
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="sesameeg">
+<h1>SESAMEEG<a class="headerlink" href="#sesameeg" title="Link to this heading">¶</a></h1>
+<p>This is a MATLAB implementation of the Bayesian multi–dipole localization method SESAME <a class="footnote-reference brackets" href="#id3" id="id1" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a>
+(SEquential Semi-Analytic Montecarlo Estimator) for the automatic estimation of
+brain source currents from MEEG data, either in the time domain and in the frequency domain <a class="footnote-reference brackets" href="#id4" id="id2" role="doc-noteref"><span class="fn-bracket">[</span>2<span class="fn-bracket">]</span></a>.</p>
+<p>A mathematical description of the algorithm is available in the <a class="reference internal" href="explanation_algorithm.html"><span class="doc">documentation</span></a>.</p>
+<p>The algorithm takes in input a sourcespace, a leadfield and a data time series, and outputs a posterior probability map for source locations, the estimated number of dipoles, their locations and their amplitudes.</p>
+<p><code class="xref mat mat-scpt docutils literal notranslate"><span class="pre">script_run_SESAME</span></code> contains an example script that launches the algorithm
+<a class="reference internal" href="api.html#inverse_SESAME" title="inverse_SESAME"><code class="xref mat mat-func docutils literal notranslate"><span class="pre">inverse_SESAME()</span></code></a> contains the Monte Carlo algorithm
+<a class="reference internal" href="api.html#inverse_SESAME_viewer" title="inverse_SESAME_viewer"><code class="xref mat mat-func docutils literal notranslate"><span class="pre">inverse_SESAME_viewer()</span></code></a> contains code for visualizing the output.</p>
+</section>
+<section id="bug-reports">
+<h1>Bug reports<a class="headerlink" href="#bug-reports" title="Link to this heading">¶</a></h1>
+<p>Use the <a class="reference external" href="https://github.com/pybees/sesameeg/issues">github issue tracker</a> to report bugs.</p>
+<section id="authors-of-the-code">
+<h2>Authors of the code<a class="headerlink" href="#authors-of-the-code" title="Link to this heading">¶</a></h2>
+<div class="line-block">
+<div class="line">Alberto Sorrentino &lt;<a class="reference external" href="mailto:sorrentino&#37;&#52;&#48;dima&#46;unige&#46;it">sorrentino<span>&#64;</span>dima<span>&#46;</span>unige<span>&#46;</span>it</a>&gt;</div>
+<div class="line">Alessandro Viani &lt;<a class="reference external" href="mailto:viani&#37;&#52;&#48;dima&#46;unige&#46;it">viani<span>&#64;</span>dima<span>&#46;</span>unige<span>&#46;</span>it</a>&gt;</div>
+<div class="line">Gianvittorio Luria &lt;<a class="reference external" href="mailto:luria&#37;&#52;&#48;dima&#46;unige&#46;it">luria<span>&#64;</span>dima<span>&#46;</span>unige<span>&#46;</span>it</a>&gt;,</div>
+<div class="line">Sara Sommariva &lt;<a class="reference external" href="mailto:sommariva&#37;&#52;&#48;dima&#46;unige&#46;it">sommariva<span>&#64;</span>dima<span>&#46;</span>unige<span>&#46;</span>it</a>&gt;,</div>
+</div>
+</section>
+</section>
+<section id="cite-our-work">
+<h1>Cite our work<a class="headerlink" href="#cite-our-work" title="Link to this heading">¶</a></h1>
+<p>If you use this code in your project, please consider citing our work:</p>
+<aside class="footnote-list brackets">
+<aside class="footnote brackets" id="id3" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">1</a><span class="fn-bracket">]</span></span>
+<ol class="upperalpha simple" start="19">
+<li><p>Sommariva and A. Sorrentino, <a class="reference external" href="https://doi.org/10.1088/0266-5611/30/11/114020">Sequential Monte Carlo samplers for semi-linear inverse problems and application to Magnetoencephalography</a>. Inverse Problems, 30 114020 (2014).</p></li>
+</ol>
+</aside>
+<aside class="footnote brackets" id="id4" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id2">2</a><span class="fn-bracket">]</span></span>
+<ol class="upperalpha simple" start="7">
+<li><p>Luria et al., <a class="reference external" href="https://doi.org/10.1016/j.jneumeth.2018.11.007">Bayesian multi-dipole modelling in the frequency domain</a>. J. Neurosci. Meth., 312 (2019) 27–36.</p></li>
+</ol>
+</aside>
+</aside>
+<div class="toctree-wrapper compound">
+</div>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2023, SESAMEEG Developers. Last updated on 2023-12-15.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

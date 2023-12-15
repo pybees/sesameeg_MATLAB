@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>IAS Demo &#8212; sesameeg_MATLAB  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=0bf093e7" />
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="API Documentation" href="../api.html" />
+    <link rel="prev" title="SESAMEEG" href="../index.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="../_static/js/jquery-1.12.4.min.js"></script>
+<script type="text/javascript" src="../_static/js/jquery-fix.js"></script>
+<script type="text/javascript" src="../_static/bootstrap-3.4.1/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="../_static/bootstrap-sphinx.js"></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+          SESAMEEG</a>
+        <span class="navbar-text navbar-version pull-left"><b></b></span>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+                <li><a href="../api.html">API</a></li>
+                <li><a href="#">Examples</a></li>
+                <li><a href="../explanation_algorithm.html">Model</a></li>
+                <li><a href="https://github.com/pybees/sesameeg_MATLAB">Github</a></li>
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="../index.html">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">IAS Demo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">API Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation_algorithm.html">Mathematical model</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">Page <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">IAS Demo</a></li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+            
+            
+            
+              <li class="hidden-sm">
+<div id="sourcelink">
+  <a href="../_sources/examples/index.rst.txt"
+     rel="nofollow">Source</a>
+</div></li>
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="../search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="ias-demo">
+<span id="example"></span><h1>IAS Demo<a class="headerlink" href="#ias-demo" title="Link to this heading">¶</a></h1>
+<p>This is a demo for testing the Iterative Alternating Sequential (IAS) algorithm.</p>
+<p>The real data set used for this demo is the MEG sample data acquired with the Neuromag Vectorview system
+at MGH/HMS/MIT Athinoula A. Martinos Center Biomedical Imaging and made available, together with the
+MRI reconstructions created with FreeSurfer, in the <a href="http://martinos.org/mne/stable/index.html" target="_blank">MNE python</a> software package.</p>
+<p>As part of the protocol for the data collection, checkerboard patterns were presented into the left
+and right visual field, interspersed by tones to the left or right ear. The interval between the stimuli
+was 750 ms. Occasionally a smiley face was presented at the center of the visual field. The subject
+was asked to press a key with the right index finger as soon as possible after the appearance of the fac.e <a class="reference internal" href="#ref" id="id1"><span>[Ref]</span></a>
+Here we only consider the trials corresponding to the left visual stimulus and perform the averaging on these trials.
+The source space containing both cortical regions and subcortical structures
+after discretization comprises 19054 vertices.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Click <a href="https://www.dropbox.com/s/6ho0w35y591lm24/IAS_data.tar.gz?dl=1" target="_blank">here</a> to download the data for IAS demo.</p>
+</div>
+<div role="list" class="citation-list">
+<div class="citation" id="ref" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">Ref</a><span class="fn-bracket">]</span></span>
+<ol class="upperalpha simple">
+<li><p>Gramfort et al, MNE software for processing MEG and EEG data, Neuroimage 86 (2014) 446-460</p></li>
+</ol>
+</div>
+</div>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">%% Reset all</span>
+<span class="nb">clear</span><span class="p">;</span><span class="w"> </span><span class="nb">clc</span><span class="p">;</span>
+<span class="n">close</span><span class="w"> </span><span class="s">all</span>
+
+<span class="c">%% Input</span>
+<span class="c">%     SNR: estimated signal-to-noise ratio</span>
+<span class="n">SNR</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">9</span><span class="p">;</span>
+<span class="c">%     eta: scalar, parameter for selecting the focality of the reconstructed activity</span>
+<span class="n">eta</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">0.01</span><span class="p">;</span>
+<span class="n">cut_off</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">0.9</span><span class="p">;</span>
+
+<span class="c">%% Loading the source space</span>
+<span class="c">%     coord, normals: (3,N) array, coordinates and normal vectors of the dipoles in the grid</span>
+<span class="nb">disp</span><span class="p">(</span><span class="s">&#39;Loading source space&#39;</span><span class="p">)</span>
+<span class="nb">load</span><span class="p">(</span><span class="s">&#39;SourceSpace_DBA&#39;</span><span class="p">)</span>
+
+<span class="c">%% Loading the leadfield matrix</span>
+<span class="c">%     LF: (M,3*N) array, the lead field matrix (M is the number of channels; N is the number of dipoles)</span>
+<span class="nb">disp</span><span class="p">(</span><span class="s">&#39;Loading leadfield matrix&#39;</span><span class="p">)</span>
+<span class="nb">load</span><span class="p">(</span><span class="s">&#39;LeadfieldMatrix_DBA&#39;</span><span class="p">)</span>
+
+<span class="c">%% Loading the magnetic data</span>
+<span class="c">%     data: (M,T) array, a set of data of length T</span>
+<span class="c">%     time: T-vector, times</span>
+<span class="nb">disp</span><span class="p">(</span><span class="s">&#39;Loading data&#39;</span><span class="p">)</span>
+<span class="nb">load</span><span class="p">(</span><span class="s">&#39;visualMEGData&#39;</span><span class="p">)</span>
+
+<span class="c">%% Building anatomical prior</span>
+<span class="p">:</span><span class="n">func</span><span class="p">:</span>`<span class="n">IAS</span><span class="p">.</span><span class="n">BuildAnatomicalPrior</span>`
+<span class="nb">disp</span><span class="p">(</span><span class="s">&#39;Building anatomical prior&#39;</span><span class="p">)</span>
+<span class="n">APChol</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">BuildAnatomicalPrior</span><span class="p">(</span><span class="n">coord</span><span class="p">,</span><span class="n">normals</span><span class="p">);</span>
+
+<span class="c">%% Setting theta_star and scaling</span>
+<span class="nb">disp</span><span class="p">(</span><span class="s">&#39;Setting parameters&#39;</span><span class="p">)</span>
+<span class="n">t_peak</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">86</span><span class="p">;</span>
+<span class="n">t_min</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="n">t_max</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">211</span><span class="p">;</span>
+<span class="n">B</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">data</span><span class="p">(:,</span><span class="n">t_min</span><span class="p">:</span><span class="n">t_max</span><span class="p">);</span>
+<span class="p">[</span><span class="n">theta_star</span><span class="p">,</span><span class="n">theta_cut_off</span><span class="p">,</span><span class="n">sigma</span><span class="p">,</span><span class="n">LF_scaling</span><span class="p">,</span><span class="n">B_scaling</span><span class="p">]</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">SetParameters</span><span class="p">(</span><span class="n">LF</span><span class="p">,</span><span class="n">APChol</span><span class="p">,</span><span class="n">B</span><span class="p">,</span><span class="n">SNR</span><span class="p">,</span><span class="n">cut_off</span><span class="p">);</span>
+
+<span class="c">%% Solving the inverse problem using IAS algorithm</span>
+<span class="nb">disp</span><span class="p">([</span><span class="s">&#39;Running IAS algorithm from time &#39;</span><span class="p">,</span><span class="nb">num2str</span><span class="p">(</span><span class="nb">time</span><span class="p">(</span><span class="n">t_min</span><span class="p">)),</span><span class="s">&#39; ms to time &#39;</span><span class="p">,</span><span class="nb">num2str</span><span class="p">(</span><span class="nb">time</span><span class="p">(</span><span class="n">t_max</span><span class="p">)),</span><span class="s">&#39; ms&#39;</span><span class="p">])</span>
+<span class="n">Q</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">IAS_algorithm</span><span class="p">(</span><span class="n">LF</span><span class="p">,</span><span class="w"> </span><span class="n">LF_scaling</span><span class="p">,</span><span class="w"> </span><span class="n">APChol</span><span class="p">,</span><span class="w"> </span><span class="n">B</span><span class="p">,</span><span class="w"> </span><span class="n">B_scaling</span><span class="p">,</span><span class="w"> </span><span class="n">sigma</span><span class="p">,</span><span class="w"> </span><span class="n">theta_star</span><span class="p">,</span><span class="w"> </span><span class="n">eta</span><span class="p">);</span>
+
+<span class="c">%% Visualizing the activity map</span>
+<span class="nb">disp</span><span class="p">([</span><span class="s">&#39;Visualizing activity map at time &#39;</span><span class="p">,</span><span class="nb">num2str</span><span class="p">(</span><span class="nb">time</span><span class="p">(</span><span class="n">t_peak</span><span class="p">)),</span><span class="s">&#39; ms&#39;</span><span class="p">])</span>
+<span class="n">N</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nb">size</span><span class="p">(</span><span class="n">LF</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span><span class="o">/</span><span class="mi">3</span><span class="p">;</span><span class="w">  </span><span class="c">% number of dipoles in the source space</span>
+<span class="n">t_vis</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">t_peak</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">t_min</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="n">q</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">Q</span><span class="p">(:,</span><span class="w"> </span><span class="n">t_vis</span><span class="p">);</span>
+<span class="n">dip_norm2</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nb">sum</span><span class="p">(</span><span class="nb">reshape</span><span class="p">(</span><span class="n">q</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="n">N</span><span class="p">)</span><span class="o">.^</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span>
+<span class="n">Q_est</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nb">sqrt</span><span class="p">(</span><span class="n">dip_norm2</span><span class="p">);</span>
+<span class="n">SlicedVisualization_ActivityMap</span><span class="p">(</span><span class="n">coord</span><span class="p">,</span><span class="n">Q_est</span><span class="p">);</span>
+
+<span class="c">%% Visualazing the activity map and its maximum</span>
+<span class="p">[</span><span class="n">Q_max</span><span class="p">,</span><span class="n">i_max</span><span class="p">]</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nb">max</span><span class="p">(</span><span class="n">Q_est</span><span class="p">);</span>
+<span class="n">r0</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">coord</span><span class="p">(:,</span><span class="n">i_max</span><span class="p">);</span>
+<span class="n">SingleSliceVisualization_ActivityMap</span><span class="p">(</span><span class="n">coord</span><span class="p">,</span><span class="n">Q_est</span><span class="p">,</span><span class="n">r0</span><span class="p">,</span><span class="s">&#39;CoordSystem&#39;</span><span class="p">,</span><span class="s">&#39;Brainstorm&#39;</span><span class="p">,</span><span class="s">&#39;ColorScale&#39;</span><span class="p">,</span><span class="s">&#39;double&#39;</span><span class="p">,</span><span class="s">&#39;Locator&#39;</span><span class="p">,</span><span class="s">&#39;pinhead&#39;</span><span class="p">);</span>
+</pre></div>
+</div>
+<figure class="align-center" id="id2">
+<img alt="examples/img/SingleSliceVisualization.jpg" src="examples/img/SingleSliceVisualization.jpg" />
+<figcaption>
+<p><span class="caption-text">Reconstructed activity map from real data at 92 ms</span><a class="headerlink" href="#id2" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
+<p><strong>Download</strong> IAS Demo script: <code class="xref download docutils literal notranslate"><span class="pre">IAS_Demo.m</span></code></p>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2023, SESAMEEG Developers. Last updated on 2023-12-15.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>

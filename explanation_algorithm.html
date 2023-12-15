@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Mathematical model &#8212; sesameeg_MATLAB  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="_static/bootstrap-sphinx.css?v=0bf093e7" />
+    <script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="API Documentation" href="api.html" />
+<meta charset='utf-8'>
+<meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1'>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script type="text/javascript" src="_static/js/jquery-1.12.4.min.js"></script>
+<script type="text/javascript" src="_static/js/jquery-fix.js"></script>
+<script type="text/javascript" src="_static/bootstrap-3.4.1/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="_static/bootstrap-sphinx.js"></script>
+
+  </head><body>
+
+  <div id="navbar" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="index.html">
+          SESAMEEG</a>
+        <span class="navbar-text navbar-version pull-left"><b></b></span>
+      </div>
+
+        <div class="collapse navbar-collapse nav-collapse">
+          <ul class="nav navbar-nav">
+            
+                <li><a href="api.html">API</a></li>
+                <li><a href="examples/index.html">Examples</a></li>
+                <li><a href="#">Model</a></li>
+                <li><a href="https://github.com/pybees/sesameeg_MATLAB">Github</a></li>
+            
+            
+              <li class="dropdown globaltoc-container">
+  <a role="button"
+     id="dLabelGlobalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="index.html">Site <b class="caret"></b></a>
+  <ul class="dropdown-menu globaltoc"
+      role="menu"
+      aria-labelledby="dLabelGlobalToc"><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="examples/index.html">IAS Demo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Documentation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Mathematical model</a></li>
+</ul>
+</ul>
+</li>
+              
+                <li class="dropdown">
+  <a role="button"
+     id="dLabelLocalToc"
+     data-toggle="dropdown"
+     data-target="#"
+     href="#">Page <b class="caret"></b></a>
+  <ul class="dropdown-menu localtoc"
+      role="menu"
+      aria-labelledby="dLabelLocalToc"><ul>
+<li><a class="reference internal" href="#">Mathematical model</a><ul>
+<li><a class="reference internal" href="#multi-dipole-source-model">Multi–dipole source model.</a></li>
+<li><a class="reference internal" href="#measurement-model">Measurement model</a></li>
+<li><a class="reference internal" href="#statistical-model">Statistical model.</a><ul>
+<li><a class="reference internal" href="#prior-distribution">Prior distribution.</a></li>
+<li><a class="reference internal" href="#likelihood-function">Likelihood function.</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#sesame-in-action">SESAME in action.</a><ul>
+<li><a class="reference internal" href="#asmc-sampler">ASMC sampler.</a></li>
+<li><a class="reference internal" href="#analytic-computation-of-p-mathbf-q-1-n-d-mathbf-y-n-d-mathbf-r-1-n-d">Analytic computation of <span class="math notranslate nohighlight">\(p(\mathbf{q}_{1:n_D}\,|\,\mathbf{y}, n_D, \mathbf{r}_{1:n_D})\)</span>.</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#get-the-most-out-of-sesame-s-results">Get the most out of SESAME’s results.</a></li>
+<li><a class="reference internal" href="#references">References</a></li>
+</ul>
+</li>
+</ul>
+</ul>
+</li>
+              
+            
+            
+            
+            
+            
+              <li class="hidden-sm">
+<div id="sourcelink">
+  <a href="_sources/explanation_algorithm.rst.txt"
+     rel="nofollow">Source</a>
+</div></li>
+            
+          </ul>
+
+          
+            
+<form class="navbar-form navbar-right" action="search.html" method="get">
+ <div class="form-group">
+  <input type="text" name="q" class="form-control" placeholder="Search" />
+ </div>
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+          
+        </div>
+    </div>
+  </div>
+
+<div class="container">
+  <div class="row">
+    <div class="body col-md-12 content" role="main">
+      
+  <section id="mathematical-model">
+<h1>Mathematical model<a class="headerlink" href="#mathematical-model" title="Link to this heading">¶</a></h1>
+<p>SESAME (Sequential Semi-Analytic Montecarlo Estimation) employs a Bayesian perspective on the problem of
+estimating an unknown number of current dipoles from a set of spatial topographies of
+MagnetoEncephaloGraphic (MEG) and/or ElectroEncephaloGraphic (EEG) data.
+This section intends to outline the main ideas behind it.
+For a thorough description of the subject, the reader is referred to <a class="footnote-reference brackets" href="#id7" id="id1" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a>, <a class="footnote-reference brackets" href="#id8" id="id2" role="doc-noteref"><span class="fn-bracket">[</span>2<span class="fn-bracket">]</span></a>.</p>
+<p>For the sake of clarity, the description below deals with the analysis of a single MEG/EEG topography.
+However, as shown in <a class="footnote-reference brackets" href="#id7" id="id3" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a>, this approach easily generalizes to include multiple topographies
+under the hypothesis that both the number of sources and their locations do not change.</p>
+<section id="multi-dipole-source-model">
+<h2>Multi–dipole source model.<a class="headerlink" href="#multi-dipole-source-model" title="Link to this heading">¶</a></h2>
+<p>SESAME makes use of the equivalent current dipole model for the neuronal currents.
+In this framework, the brain volume is discretized into small domains and the activity of the neuronal population
+inside any of these domains is represented by a point source, which can be thought of as the concentration of
+the current to a given reference point of the domain.</p>
+<p>In mathematical terms, each of these point sources, termed <em>current dipoles</em>, is an applied vector, whose
+moment <span class="math notranslate nohighlight">\(\mathbf{q}\)</span> expresses the strength and the orientation of the current.
+The neuronal primary current distribution <span class="math notranslate nohighlight">\(\mathbf{j}\)</span> is then assumed to be  closely approximated by
+the superposition of a small — but unknown — number <span class="math notranslate nohighlight">\(n_D\)</span>
+of current dipoles, and can therefore be seen in abstract terms as a point in the disjoint union of
+spaces</p>
+<div class="math notranslate nohighlight">
+\[\mathcal{J}\ :=\ \bigcup_{n_D}\ \{n_D\} \times \mathcal{D}^{n_D}\]</div>
+<p>in which <span class="math notranslate nohighlight">\(\mathcal{D}^{n_D}\)</span> is the state space of the  <span class="math notranslate nohighlight">\(n_D\)</span>–tuple of current dipoles
+approximating <span class="math notranslate nohighlight">\(\mathbf{j}\)</span>, and where the number <span class="math notranslate nohighlight">\(n_D\)</span> of dipoles is explicitly included
+among the unkowns. The space <span class="math notranslate nohighlight">\(\mathcal{D}^{n_D}\)</span> is defined as the Cartesian product of
+<span class="math notranslate nohighlight">\(n_D\)</span> copies of the single dipole space <span class="math notranslate nohighlight">\(\mathcal{D}\)</span> whose points
+are given by the pairs  <span class="math notranslate nohighlight">\((r, \mathbf{q})\)</span>, in which <span class="math notranslate nohighlight">\(r\)</span> is an integer variable
+representing the dipole location and <span class="math notranslate nohighlight">\(\mathbf{q}\)</span> is a three–dimensional vector representing
+the dipole moment.
+Any current distribution <span class="math notranslate nohighlight">\(\mathbf{j}\)</span> is therefore represented as</p>
+<div class="math notranslate nohighlight">
+\[\mathbf{j} = \left(n_D, r_1, \mathbf{q}_1, \dots, r_{n_D}, \mathbf{q}_{n_D} \right) \in \mathcal{J}\, .\]</div>
+<p>or also equivalently as</p>
+<div class="math notranslate nohighlight">
+\[\mathbf{j} = \left(\/n_D, \mathbf{r}_{1:n_D}, \mathbf{q}_{1:n_D}\/\right)\ ,\]</div>
+<p>which directly follows from the previous equation by reordering the axes and by introducing the shorthand notations</p>
+<div class="math notranslate nohighlight">
+\[\mathbf{r}_{1:n_D}\, :=\, \left(r_1, \ldots, r_{n_D}\right),\]</div>
+<div class="math notranslate nohighlight">
+\[\mathbf{q}_{1:n_D}\, :=\, \left(\mathbf{q}_{\/1}, \ldots, \mathbf{q}_{\/{n_D}}\right).\]</div>
+</section>
+<section id="measurement-model">
+<h2>Measurement model<a class="headerlink" href="#measurement-model" title="Link to this heading">¶</a></h2>
+<p>Let <span class="math notranslate nohighlight">\(\mathbf{y}_t = (\/{y_t}^{\!1}, \ldots, {y_t}^{\!n_s}\/)\)</span> denote the data recorded by
+the <span class="math notranslate nohighlight">\(n_S\)</span> MEG/EEG sensors at time <span class="math notranslate nohighlight">\(\ t\ \)</span>.
+Assuming data to be affected by zero–mean Gaussian additive noise, at each sampled time <span class="math notranslate nohighlight">\(\ t\ \)</span>
+the following functional relation holds</p>
+<div class="math notranslate nohighlight" id="equation-fwd">
+<span class="eqno">(1)<a class="headerlink" href="#equation-fwd" title="Link to this equation">¶</a></span>\[\mathbf{y}_t = \mathbf{e}_t + \mathbf{n}_t,\]</div>
+<p>being <span class="math notranslate nohighlight">\(\mathbf{e}_t\)</span> the exact field produced by the neural current distribution
+<span class="math notranslate nohighlight">\(\mathbf{j}_t\)</span> and <span class="math notranslate nohighlight">\(\mathbf{n}_t\)</span> the noise term.
+The explicit model for <span class="math notranslate nohighlight">\(\mathbf{e}_t\)</span> is given by</p>
+<div class="math notranslate nohighlight">
+\[\mathbf{e}_t = \sum_{k=1}^{n_D} G(r_k) \cdot \mathbf{q}_{k,t} =:  G\!\left(\mathbf{r}\/\right) \cdot \mathbf{q}_{t},\]</div>
+<p>where, at time <span class="math notranslate nohighlight">\(t\/\)</span>,  <span class="math notranslate nohighlight">\(G(r_k)\)</span> is the lead field matrix computed at the location <span class="math notranslate nohighlight">\(r_k\)</span> of the
+<span class="math notranslate nohighlight">\(k\)</span>–th dipole on the discretized cortex, <span class="math notranslate nohighlight">\(\mathbf{q}_{\/k,t}\)</span> is the corresponding dipole moment, and</p>
+<div class="math notranslate nohighlight">
+\[\mathbf{q}_{t}\,  :=\, \left(\mathbf{q}_{\/1,t}, \ldots, \mathbf{q}_{\/{n_D}, t}\right) ,\]</div>
+<div class="math notranslate nohighlight">
+\[G\!\left(\/\mathbf{r}\/\right)\, :=\, \left[G(r_1)\lvert\,\cdots\lvert G(r_{n_D})\right].\]</div>
+<p>In the forward model both free- (<span class="math notranslate nohighlight">\(G(r_k) \in \mathbb{R}^3\)</span>) and fixed- (<span class="math notranslate nohighlight">\(G(r_k) \in \mathbb{R}^1\)</span>, normal
+to the cortical surface) dipole orientations are allowed.</p>
+</section>
+<section id="statistical-model">
+<h2>Statistical model.<a class="headerlink" href="#statistical-model" title="Link to this heading">¶</a></h2>
+<p>In a Bayesian approach to the neuromagnetic inverse problem, the MEG/EEG data <span class="math notranslate nohighlight">\(\mathbf{y}\)</span>,
+the unknown <span class="math notranslate nohighlight">\(\mathbf{j}\)</span> and the noise <span class="math notranslate nohighlight">\(\mathbf{e}\)</span> are considered as the realizations of
+corresponding random variables <span class="math notranslate nohighlight">\(\mathbf{Y}\)</span>,
+<span class="math notranslate nohighlight">\(\mathbf{J} = \left(N_D,\, \mathbf{R}_{1:n_D},\, \mathbf{Q}  \,\right)\)</span> and <span class="math notranslate nohighlight">\(\mathbf{E}\)</span>,
+related by</p>
+<div class="math notranslate nohighlight">
+\[\mathbf{Y} =  G\!\left(\mathbf{R}\right) \cdot \mathbf{Q} + \mathbf{N} .\]</div>
+<p>In this framework, the solution is the posterior probability density function (pdf) of <span class="math notranslate nohighlight">\(\mathbf{J}\)</span> conditioned
+on the data, which, in the light of Bayes’ theorem, can be written as</p>
+<div class="math notranslate nohighlight">
+\[p(\mathbf{j}|\mathbf{y}) \propto p(\mathbf{y}|\mathbf{j})\, p(\mathbf{j})\ ,\]</div>
+<p>being <span class="math notranslate nohighlight">\(p(\mathbf{j})\)</span> the prior pdf, and <span class="math notranslate nohighlight">\(p(\mathbf{y}|\mathbf{j})\)</span> the likelihood function.
+From <span class="math notranslate nohighlight">\(p(\mathbf{j}|\mathbf{y})\)</span> sensible estimates of <span class="math notranslate nohighlight">\(\mathbf{j}\)</span> can then be computed.</p>
+<section id="prior-distribution">
+<h3>Prior distribution.<a class="headerlink" href="#prior-distribution" title="Link to this heading">¶</a></h3>
+<p>The prior pdf <span class="math notranslate nohighlight">\(p(\mathbf{j})\)</span> encodes all the information on the unknown which is available before the
+measurement is made. Here we set:</p>
+<div class="math notranslate nohighlight">
+\[p(\mathbf{j}) = p(n_D, \mathbf{r}_{1:n_D}, \mathbf{q}_{1:n_D}) = p(n_D) \prod_{k=1}^{n_D}\, p(r_k|n_D, r_1, \ldots, r_{k-1})\, p(\mathbf{q}_{k}),\]</div>
+<p>where:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(p(n_D)\)</span> is the prior pdf for the number of dipole, which is defined as a Poisson distribution with
+mean <span class="math notranslate nohighlight">\(\lambda\)</span>.</p></li>
+<li><p><span class="math notranslate nohighlight">\(p(r_k|n_D, r_1, \ldots, r_{k-1})\)</span> is the prior pdf for the location of the <span class="math notranslate nohighlight">\(k-\)</span> th dipole,
+which is defined as a uniform distribution on the given brain discretization, under the constraint
+that at each grid point can be located at most one dipole.</p></li>
+<li><p><span class="math notranslate nohighlight">\(p(\mathbf{q}_k)\)</span> is the prior pdf for the dipole moment. Its definition depends on the value given to the boolean
+parameter <code class="docutils literal notranslate"><span class="pre">hyper_q</span></code> when instantiating the class <code class="xref py py-class docutils literal notranslate"><span class="pre">Sesame</span></code>.
+In particular:</p>
+<ul>
+<li><p>if  <code class="docutils literal notranslate"><span class="pre">hyper_q</span> <span class="pre">=</span> <span class="pre">True</span></code>, it is given by a hierarchical model <span class="math notranslate nohighlight">\(p(\mathbf{q}_k) = \int p(\mathbf{q}_k|\sigma_q) p(\sigma_q) d\sigma_q\)</span>,
+where the conditional distribution <span class="math notranslate nohighlight">\(p(\mathbf{q}_k|\sigma_q)\)</span> is a trivariate Gaussian distribution with zero
+mean and diagonal matrix equal to <span class="math notranslate nohighlight">\(\sigma_q^2 \mathbf{I}\)</span> and the prior distribution of the standard deviation
+<span class="math notranslate nohighlight">\(\sigma_q\)</span> is log-uniform;</p></li>
+<li><p>if  <code class="docutils literal notranslate"><span class="pre">hyper_q</span> <span class="pre">=</span> <span class="pre">False</span></code>, it is a trivariate Gaussian distribution with zero mean and diagonal matrix equal
+to <span class="math notranslate nohighlight">\(\sigma_q^2 \mathbf{I}\)</span>. The variance <span class="math notranslate nohighlight">\(\sigma_q^2\)</span> reflects information on the dipole strenght.</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="likelihood-function">
+<h3>Likelihood function.<a class="headerlink" href="#likelihood-function" title="Link to this heading">¶</a></h3>
+<p>The likelihood function, <span class="math notranslate nohighlight">\(p(\mathbf{y}|\mathbf{j})\)</span>, contains information on the forward model <a class="reference internal" href="#equation-fwd">(1)</a> and the
+statistical properties of the noise. Here we assume the noise to be Gaussian with zero mean and diagonal covariance
+matrix <span class="math notranslate nohighlight">\(\sigma_e^2 \mathbf{I}\)</span>, thus</p>
+<div class="math notranslate nohighlight">
+\[p(\mathbf{y}|\mathbf{j}) = \mathcal{N}(\mathbf{y}; \mathbf{G} \left( \mathbf{r}_{1:n_D} \right) \cdot \mathbf{q}_{1:n_D}, \sigma_{e}^2 \mathbf{I}).\]</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+</section>
+<section id="sesame-in-action">
+<h2>SESAME in action.<a class="headerlink" href="#sesame-in-action" title="Link to this heading">¶</a></h2>
+<p>In order to compute estimates of the unknown neural currents from the posterior distribution, a numerical approximation
+of the latter is needed. By exploiting the semi–linear structure of the MEG/EEG forward model SESAME approximates
+the posterior pdf</p>
+<div class="math notranslate nohighlight">
+\[p(\mathbf{j}|\mathbf{y})\, =\,  p(\mathbf{q}_{1:n_D}\,|\,\mathbf{y}, n_D, \mathbf{r}_{1:n_D})\ p(n_D, \mathbf{r}_{1:n_D}\,|\,\mathbf{y})\]</div>
+<p>through a two–step approach:</p>
+<ol class="arabic simple">
+<li><p>first the marginal posterior <span class="math notranslate nohighlight">\(p(n_D, \mathbf{r}_{1:n_D}\,|\,\mathbf{y})\)</span> is approximated via an
+Adaptive Sequential Monte Carlo (ASMC)  sampler <a class="footnote-reference brackets" href="#id8" id="id4" role="doc-noteref"><span class="fn-bracket">[</span>2<span class="fn-bracket">]</span></a> ;</p></li>
+<li><p>then  <span class="math notranslate nohighlight">\(p(\mathbf{q}_{1:n_D}\,|\,\mathbf{y}, n_D, \mathbf{r}_{1:n_D})\)</span> is analytically computed.</p></li>
+</ol>
+<section id="asmc-sampler">
+<h3>ASMC sampler.<a class="headerlink" href="#asmc-sampler" title="Link to this heading">¶</a></h3>
+<p>The ASMC sampler aims at approximating the target pdf <span class="math notranslate nohighlight">\(p(n_D, \mathbf{r}_{1:n_D}\,|\,\mathbf{y})\)</span> using a large
+set of samples, termed <cite>particles</cite>; in our context each particle is a candidate solution and contains all the
+parameters that are estimated through the Monte Carlo procedure, namely the number of active sources and their
+location.</p>
+<p>One easy way to produce such set of samples is to draw them independently from a simple pdf, and possibly weight
+them to correctly approximate the target pdf (Importance Sampling, IS <a class="footnote-reference brackets" href="#id9" id="id5" role="doc-noteref"><span class="fn-bracket">[</span>3<span class="fn-bracket">]</span></a>).</p>
+<p>An alternative approach is to start from a random candidate, perturb it randomly many times, and then approximate
+the target pdf with the collection of samples along the iterations (Markov Chain Monte Carlo, MCMC <a class="footnote-reference brackets" href="#id9" id="id6" role="doc-noteref"><span class="fn-bracket">[</span>3<span class="fn-bracket">]</span></a>).</p>
+<p>The ASMC sampler combines these two techniques: a sequence of artificial distributions is defined that smoothly
+moves from a tractable prior pdf <span class="math notranslate nohighlight">\(p(n_D, \mathbf{r}_{1:n_D})\)</span> to the posterior pdf
+<span class="math notranslate nohighlight">\(p(n_D, \mathbf{r}_{1:n_D}\,|\,\mathbf{y})\)</span>, multiple samples are independently drawn from the prior pdf,
+evolve following an MCMC scheme, and their weights are updated after every MCMC step;
+at times, a resample move is performed, that means samples having negligible weights are replaced by samples in
+the higher–probability region, so as to explore better these areas.
+Eventually, the target distribution is approximated by the weighted sample set obtained at the last iteration.</p>
+<p>The step with which the path from the prior to the posterior pdf is covered is not established a priori,
+but adaptively determined at run-time. This means that the actual number of iterations is also determined
+online, even if it is always kept within given lower and upper bounds.</p>
+</section>
+<section id="analytic-computation-of-p-mathbf-q-1-n-d-mathbf-y-n-d-mathbf-r-1-n-d">
+<h3>Analytic computation of <span class="math notranslate nohighlight">\(p(\mathbf{q}_{1:n_D}\,|\,\mathbf{y}, n_D, \mathbf{r}_{1:n_D})\)</span>.<a class="headerlink" href="#analytic-computation-of-p-mathbf-q-1-n-d-mathbf-y-n-d-mathbf-r-1-n-d" title="Link to this heading">¶</a></h3>
+<p>By exploiting the mutual independence of <span class="math notranslate nohighlight">\(\mathbf{J}\)</span> and <span class="math notranslate nohighlight">\(\mathbf{N}\)</span> and the Gaussian assumptions made
+about the prior pdf of the dipole moments and the noise model, SESAME analytically compute the posterior
+pdf <span class="math notranslate nohighlight">\(p(\mathbf{q}_{1:n_D}\,|\,\mathbf{y}, n_D, \mathbf{r}_{1:n_D})\)</span>.
+Indeed, it is a Gaussian density whose mean and variance depend only on the data, the forward
+solution <span class="math notranslate nohighlight">\(\mathbf{G}\left(\mathbf{r}_{1:n_D}\right)\)</span>, and the standard
+deviations <span class="math notranslate nohighlight">\(\sigma_q\)</span> and <span class="math notranslate nohighlight">\(\sigma_e\)</span>.</p>
+</section>
+</section>
+<section id="get-the-most-out-of-sesame-s-results">
+<h2>Get the most out of SESAME’s results.<a class="headerlink" href="#get-the-most-out-of-sesame-s-results" title="Link to this heading">¶</a></h2>
+<p>As descibed above, SESAME approximates the full posterior distribution <span class="math notranslate nohighlight">\(p(\mathbf{j}|\mathbf{y})\)</span>
+as the set of weighted particles</p>
+<div class="math notranslate nohighlight">
+\[\left\{\big(n_D^{i}, \mathbf{r}_{1:n_D^{i}}^{i}\big), w^{i} \right\}_{i=1, ..., I}.\]</div>
+<p>Roughly speaking, each of the <span class="math notranslate nohighlight">\(I\)</span> particles represents a candidate source configuration,
+while the corresponding weight <span class="math notranslate nohighlight">\(w^i\)</span> quantifies its probability.</p>
+<p>SESAME also provides an estimate of the unknown neuronal primary current distribution <span class="math notranslate nohighlight">\(\mathbf{j}\)</span>,
+through the following procedure:</p>
+<ul>
+<li><p>first the most probable model is identified by estimating mode of the posterior pdf for the number of sources i.e.</p>
+<div class="math notranslate nohighlight">
+\[\hat{n}_D = argmax\, p \left(n_D | \mathbf{y} \right) = argmax\, \sum_{i=1}^I w^{i} \delta \left(n_D-n_D^{i} \right);\]</div>
+</li>
+<li><p>subsequently, for each point <span class="math notranslate nohighlight">\(r\)</span> in the cortical discretization, the posterior probability of a source
+being located in <span class="math notranslate nohighlight">\(r\)</span> is computed as:</p>
+<div class="math notranslate nohighlight">
+\[p(r| \mathbf{y},\hat{n}_D) = \sum_{i=1}^I w^i \delta\left(\hat{n}_D,n_D^i\right) \sum_{k=1}^{n_D^{i}} \delta\left(r, r_k^{i}\right)\, ;\]</div>
+</li>
+<li><p>the above quantity is then used to produce posterior maps of activation on the cortical surface and to compute
+estimates of dipole locations as the local peaks of such a probability map;</p></li>
+<li><p>finally, dipole moments can be reasonably estimated as the mean of the corresponding Gaussian distribution.</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The number of components of the estimated dipole moments depends on the dipole orientation constraint in the forward
+model.</p>
+</div>
+</section>
+<section id="references">
+<h2>References<a class="headerlink" href="#references" title="Link to this heading">¶</a></h2>
+<aside class="footnote-list brackets">
+<aside class="footnote brackets" id="id7" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></span>
+<span class="backrefs">(<a role="doc-backlink" href="#id1">1</a>,<a role="doc-backlink" href="#id3">2</a>)</span>
+<ol class="upperalpha simple" start="19">
+<li><p>Sommariva and A. Sorrentino, <a class="reference external" href="https://doi.org/10.1088/0266-5611/30/11/114020">Sequential Monte Carlo samplers for semi-linear inverse problems and application to Magnetoencephalography</a>. Inverse Problems, 30 114020 (2014).</p></li>
+</ol>
+</aside>
+<aside class="footnote brackets" id="id8" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span>2<span class="fn-bracket">]</span></span>
+<span class="backrefs">(<a role="doc-backlink" href="#id2">1</a>,<a role="doc-backlink" href="#id4">2</a>)</span>
+<ol class="upperalpha simple">
+<li><p>Sorrentino, G. Luria, and R. Aramini, <a class="reference external" href="https://iopscience.iop.org/article/10.1088/0266-5611/30/4/045010">Bayesian multi-dipole modeling of a single topography in MEG by adaptive Sequential Monte Carlo Samplers</a>. Inverse Problems, 30 045010 (2014).</p></li>
+</ol>
+</aside>
+<aside class="footnote brackets" id="id9" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span>3<span class="fn-bracket">]</span></span>
+<span class="backrefs">(<a role="doc-backlink" href="#id5">1</a>,<a role="doc-backlink" href="#id6">2</a>)</span>
+<ol class="upperalpha simple" start="3">
+<li><p>Robert and G. Casella, <a class="reference external" href="https://www.springer.com/gp/book/9780387212395">Monte Carlo Statistical Methods</a>, 2nd Edition.  Springer (2004).</p></li>
+</ol>
+</aside>
+</aside>
+</section>
+</section>
+
+
+    </div>
+      
+  </div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>
+      
+    </p>
+    <p>
+        &copy; Copyright 2023, SESAMEEG Developers. Last updated on 2023-12-15.<br/>
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
+    </p>
+  </div>
+</footer>
+  </body>
+</html>
