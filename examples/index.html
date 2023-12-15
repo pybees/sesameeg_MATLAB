@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>IAS Demo &#8212; sesameeg_MATLAB  documentation</title>
+    <title>Run SESAME &#8212; sesameeg_MATLAB  documentation</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="../_static/bootstrap-sphinx.css?v=0bf093e7" />
     <script src="../_static/documentation_options.js?v=5929fcd5"></script>
@@ -58,7 +58,7 @@
   <ul class="dropdown-menu globaltoc"
       role="menu"
       aria-labelledby="dLabelGlobalToc"><ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">IAS Demo</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Run SESAME</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api.html">API Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../explanation_algorithm.html">Mathematical model</a></li>
 </ul>
@@ -74,7 +74,7 @@
   <ul class="dropdown-menu localtoc"
       role="menu"
       aria-labelledby="dLabelLocalToc"><ul>
-<li><a class="reference internal" href="#">IAS Demo</a></li>
+<li><a class="reference internal" href="#">Run SESAME</a></li>
 </ul>
 </ul>
 </li>
@@ -110,97 +110,47 @@
   <div class="row">
     <div class="body col-md-12 content" role="main">
       
-  <section id="ias-demo">
-<span id="example"></span><h1>IAS Demo<a class="headerlink" href="#ias-demo" title="Link to this heading">¶</a></h1>
-<p>This is a demo for testing the Iterative Alternating Sequential (IAS) algorithm.</p>
-<p>The real data set used for this demo is the MEG sample data acquired with the Neuromag Vectorview system
-at MGH/HMS/MIT Athinoula A. Martinos Center Biomedical Imaging and made available, together with the
-MRI reconstructions created with FreeSurfer, in the <a href="http://martinos.org/mne/stable/index.html" target="_blank">MNE python</a> software package.</p>
-<p>As part of the protocol for the data collection, checkerboard patterns were presented into the left
-and right visual field, interspersed by tones to the left or right ear. The interval between the stimuli
-was 750 ms. Occasionally a smiley face was presented at the center of the visual field. The subject
-was asked to press a key with the right index finger as soon as possible after the appearance of the fac.e <a class="reference internal" href="#ref" id="id1"><span>[Ref]</span></a>
-Here we only consider the trials corresponding to the left visual stimulus and perform the averaging on these trials.
-The source space containing both cortical regions and subcortical structures
-after discretization comprises 19054 vertices.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Click <a href="https://www.dropbox.com/s/6ho0w35y591lm24/IAS_data.tar.gz?dl=1" target="_blank">here</a> to download the data for IAS demo.</p>
-</div>
-<div role="list" class="citation-list">
-<div class="citation" id="ref" role="doc-biblioentry">
-<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">Ref</a><span class="fn-bracket">]</span></span>
-<ol class="upperalpha simple">
-<li><p>Gramfort et al, MNE software for processing MEG and EEG data, Neuroimage 86 (2014) 446-460</p></li>
-</ol>
-</div>
-</div>
-<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="c">%% Reset all</span>
-<span class="nb">clear</span><span class="p">;</span><span class="w"> </span><span class="nb">clc</span><span class="p">;</span>
-<span class="n">close</span><span class="w"> </span><span class="s">all</span>
+  <section id="run-sesame">
+<span id="example"></span><h1>Run SESAME<a class="headerlink" href="#run-sesame" title="Link to this heading">¶</a></h1>
+<p>This script runs the SESAME algorithm on a real dataset provided…</p>
+<div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="nb">clc</span>
 
-<span class="c">%% Input</span>
-<span class="c">%     SNR: estimated signal-to-noise ratio</span>
-<span class="n">SNR</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">9</span><span class="p">;</span>
-<span class="c">%     eta: scalar, parameter for selecting the focality of the reconstructed activity</span>
-<span class="n">eta</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">0.01</span><span class="p">;</span>
-<span class="n">cut_off</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">0.9</span><span class="p">;</span>
+<span class="c">%% Load sample variables:</span>
+<span class="nb">load</span><span class="p">(</span><span class="s">&#39;vars_for_SESAME.mat&#39;</span><span class="p">);</span>
 
-<span class="c">%% Loading the source space</span>
-<span class="c">%     coord, normals: (3,N) array, coordinates and normal vectors of the dipoles in the grid</span>
-<span class="nb">disp</span><span class="p">(</span><span class="s">&#39;Loading source space&#39;</span><span class="p">)</span>
-<span class="nb">load</span><span class="p">(</span><span class="s">&#39;SourceSpace_DBA&#39;</span><span class="p">)</span>
+<span class="c">%% set optional input parameters</span>
 
-<span class="c">%% Loading the leadfield matrix</span>
-<span class="c">%     LF: (M,3*N) array, the lead field matrix (M is the number of channels; N is the number of dipoles)</span>
-<span class="nb">disp</span><span class="p">(</span><span class="s">&#39;Loading leadfield matrix&#39;</span><span class="p">)</span>
-<span class="nb">load</span><span class="p">(</span><span class="s">&#39;LeadfieldMatrix_DBA&#39;</span><span class="p">)</span>
+<span class="n">cfg</span><span class="p">.</span><span class="n">n_samples</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">50</span><span class="p">;</span><span class="w"> </span><span class="c">%number of samples</span>
 
-<span class="c">%% Loading the magnetic data</span>
-<span class="c">%     data: (M,T) array, a set of data of length T</span>
-<span class="c">%     time: T-vector, times</span>
-<span class="nb">disp</span><span class="p">(</span><span class="s">&#39;Loading data&#39;</span><span class="p">)</span>
-<span class="nb">load</span><span class="p">(</span><span class="s">&#39;visualMEGData&#39;</span><span class="p">)</span>
+<span class="n">cfg</span><span class="p">.</span><span class="n">t_start</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">160</span><span class="p">;</span><span class="w"> </span><span class="c">%initial time pont of the data</span>
+<span class="n">cfg</span><span class="p">.</span><span class="n">t_stop</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">200</span><span class="p">;</span><span class="w"> </span><span class="c">%final time pont of the data</span>
 
-<span class="c">%% Building anatomical prior</span>
-<span class="p">:</span><span class="n">func</span><span class="p">:</span>`<span class="n">IAS</span><span class="p">.</span><span class="n">BuildAnatomicalPrior</span>`
-<span class="nb">disp</span><span class="p">(</span><span class="s">&#39;Building anatomical prior&#39;</span><span class="p">)</span>
-<span class="n">APChol</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">BuildAnatomicalPrior</span><span class="p">(</span><span class="n">coord</span><span class="p">,</span><span class="n">normals</span><span class="p">);</span>
+<span class="n">cfg</span><span class="p">.</span><span class="n">evol_exp</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="c">%number of iterations (if &gt; 0), or adaptive number of iterations (if == 0)</span>
+<span class="n">cfg</span><span class="p">.</span><span class="n">noise_std</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">1.2e-13</span><span class="p">;</span><span class="w"> </span><span class="c">%estimated noise on the data; if not specified it is self estimated by the algorithm</span>
+<span class="n">cfg</span><span class="p">.</span><span class="n">verbose</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span>
 
-<span class="c">%% Setting theta_star and scaling</span>
-<span class="nb">disp</span><span class="p">(</span><span class="s">&#39;Setting parameters&#39;</span><span class="p">)</span>
-<span class="n">t_peak</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">86</span><span class="p">;</span>
-<span class="n">t_min</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
-<span class="n">t_max</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">211</span><span class="p">;</span>
-<span class="n">B</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">data</span><span class="p">(:,</span><span class="n">t_min</span><span class="p">:</span><span class="n">t_max</span><span class="p">);</span>
-<span class="p">[</span><span class="n">theta_star</span><span class="p">,</span><span class="n">theta_cut_off</span><span class="p">,</span><span class="n">sigma</span><span class="p">,</span><span class="n">LF_scaling</span><span class="p">,</span><span class="n">B_scaling</span><span class="p">]</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">SetParameters</span><span class="p">(</span><span class="n">LF</span><span class="p">,</span><span class="n">APChol</span><span class="p">,</span><span class="n">B</span><span class="p">,</span><span class="n">SNR</span><span class="p">,</span><span class="n">cut_off</span><span class="p">);</span>
+<span class="c">%% run SESAME</span>
 
-<span class="c">%% Solving the inverse problem using IAS algorithm</span>
-<span class="nb">disp</span><span class="p">([</span><span class="s">&#39;Running IAS algorithm from time &#39;</span><span class="p">,</span><span class="nb">num2str</span><span class="p">(</span><span class="nb">time</span><span class="p">(</span><span class="n">t_min</span><span class="p">)),</span><span class="s">&#39; ms to time &#39;</span><span class="p">,</span><span class="nb">num2str</span><span class="p">(</span><span class="nb">time</span><span class="p">(</span><span class="n">t_max</span><span class="p">)),</span><span class="s">&#39; ms&#39;</span><span class="p">])</span>
-<span class="n">Q</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">IAS_algorithm</span><span class="p">(</span><span class="n">LF</span><span class="p">,</span><span class="w"> </span><span class="n">LF_scaling</span><span class="p">,</span><span class="w"> </span><span class="n">APChol</span><span class="p">,</span><span class="w"> </span><span class="n">B</span><span class="p">,</span><span class="w"> </span><span class="n">B_scaling</span><span class="p">,</span><span class="w"> </span><span class="n">sigma</span><span class="p">,</span><span class="w"> </span><span class="n">theta_star</span><span class="p">,</span><span class="w"> </span><span class="n">eta</span><span class="p">);</span>
+<span class="n">posterior</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">inverse_SESAME</span><span class="p">(</span><span class="n">data</span><span class="p">,</span><span class="w"> </span><span class="n">LF</span><span class="p">,</span><span class="w"> </span><span class="n">sourcespace</span><span class="p">,</span><span class="w"> </span><span class="n">cfg</span><span class="p">);</span>
 
-<span class="c">%% Visualizing the activity map</span>
-<span class="nb">disp</span><span class="p">([</span><span class="s">&#39;Visualizing activity map at time &#39;</span><span class="p">,</span><span class="nb">num2str</span><span class="p">(</span><span class="nb">time</span><span class="p">(</span><span class="n">t_peak</span><span class="p">)),</span><span class="s">&#39; ms&#39;</span><span class="p">])</span>
-<span class="n">N</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nb">size</span><span class="p">(</span><span class="n">LF</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span><span class="o">/</span><span class="mi">3</span><span class="p">;</span><span class="w">  </span><span class="c">% number of dipoles in the source space</span>
-<span class="n">t_vis</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">t_peak</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">t_min</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
-<span class="n">q</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">Q</span><span class="p">(:,</span><span class="w"> </span><span class="n">t_vis</span><span class="p">);</span>
-<span class="n">dip_norm2</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nb">sum</span><span class="p">(</span><span class="nb">reshape</span><span class="p">(</span><span class="n">q</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="n">N</span><span class="p">)</span><span class="o">.^</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span>
-<span class="n">Q_est</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nb">sqrt</span><span class="p">(</span><span class="n">dip_norm2</span><span class="p">);</span>
-<span class="n">SlicedVisualization_ActivityMap</span><span class="p">(</span><span class="n">coord</span><span class="p">,</span><span class="n">Q_est</span><span class="p">);</span>
+<span class="c">%% save result</span>
 
-<span class="c">%% Visualazing the activity map and its maximum</span>
-<span class="p">[</span><span class="n">Q_max</span><span class="p">,</span><span class="n">i_max</span><span class="p">]</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nb">max</span><span class="p">(</span><span class="n">Q_est</span><span class="p">);</span>
-<span class="n">r0</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">coord</span><span class="p">(:,</span><span class="n">i_max</span><span class="p">);</span>
-<span class="n">SingleSliceVisualization_ActivityMap</span><span class="p">(</span><span class="n">coord</span><span class="p">,</span><span class="n">Q_est</span><span class="p">,</span><span class="n">r0</span><span class="p">,</span><span class="s">&#39;CoordSystem&#39;</span><span class="p">,</span><span class="s">&#39;Brainstorm&#39;</span><span class="p">,</span><span class="s">&#39;ColorScale&#39;</span><span class="p">,</span><span class="s">&#39;double&#39;</span><span class="p">,</span><span class="s">&#39;Locator&#39;</span><span class="p">,</span><span class="s">&#39;pinhead&#39;</span><span class="p">);</span>
+<span class="n">TIME</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nb">clock</span><span class="p">;</span>
+<span class="nb">save</span><span class="p">(</span><span class="nb">strcat</span><span class="p">([</span><span class="nb">date</span><span class="p">,</span><span class="s">&#39;_&#39;</span><span class="p">,</span><span class="nb">num2str</span><span class="p">(</span><span class="n">TIME</span><span class="p">(</span><span class="mi">4</span><span class="p">)),</span><span class="nb">num2str</span><span class="p">(</span><span class="n">TIME</span><span class="p">(</span><span class="mi">5</span><span class="p">)),</span><span class="nb">num2str</span><span class="p">(</span><span class="n">TIME</span><span class="p">(</span><span class="mi">6</span><span class="p">)),</span><span class="s">&#39;_SESAME.mat&#39;</span><span class="p">]),</span><span class="s">&#39;posterior&#39;</span><span class="p">);</span>
+
+
+<span class="c">%% visualization</span>
+
+<span class="n">inverse_SESAME_viewer</span><span class="p">(</span><span class="n">posterior</span><span class="p">);</span>
 </pre></div>
 </div>
-<figure class="align-center" id="id2">
-<img alt="examples/img/SingleSliceVisualization.jpg" src="examples/img/SingleSliceVisualization.jpg" />
+<figure class="align-center" id="id1">
+<img alt="../_images/output_example.png" src="../_images/output_example.png" />
 <figcaption>
-<p><span class="caption-text">Reconstructed activity map from real data at 92 ms</span><a class="headerlink" href="#id2" title="Link to this image">¶</a></p>
+<p><span class="caption-text">Plot of the SESAME output provided by <cite>inverse_SESAME_viewer</cite> function</span><a class="headerlink" href="#id1" title="Link to this image">¶</a></p>
 </figcaption>
 </figure>
-<p><strong>Download</strong> IAS Demo script: <code class="xref download docutils literal notranslate"><span class="pre">IAS_Demo.m</span></code></p>
+<p><strong>Download</strong> script: <code class="xref download docutils literal notranslate"><span class="pre">script_run_SESAME.m</span></code></p>
 </section>
 
 
