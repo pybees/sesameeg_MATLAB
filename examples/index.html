@@ -112,7 +112,13 @@
       
   <section id="run-sesame">
 <span id="example"></span><h1>Run SESAME<a class="headerlink" href="#run-sesame" title="Link to this heading">¶</a></h1>
-<p>This script runs the SESAME algorithm on a real dataset provided…</p>
+<p>This script runs the SESAME algorithm on the real somatosensory evoked field dataset described in the beamformer tutorial
+of <a href="https://www.fieldtriptoolbox.org/tutorial/beamformer_lcmv/" target="_blank">Fieldtrip</a>.</p>
+<p>The main <strong>input</strong> of the algorithm are the lead field, the source space and the data. The other parameters are optionals and
+can be specified in the <code class="docutils literal notranslate"><span class="pre">cfg</span></code> variable.</p>
+<p>The output of SESAME, the <code class="docutils literal notranslate"><span class="pre">posterior</span></code>, can be visualized by calling the <a class="reference internal" href="../api.html#inverse_SESAME_viewer" title="inverse_SESAME_viewer"><code class="xref mat mat-func docutils literal notranslate"><span class="pre">inverse_SESAME_viewer()</span></code></a> function which visualizes
+the data with the time window analyzed, the posterior of the number of sources, the cortical posterior probability map condtioned on the number of estimated dipoles,
+and the times series of the estimated dipoles.</p>
 <div class="highlight-matlab notranslate"><div class="highlight"><pre><span></span><span class="nb">clc</span>
 
 <span class="c">%% Load sample variables:</span>
@@ -165,7 +171,7 @@
       
     </p>
     <p>
-        &copy; Copyright 2023, SESAMEEG Developers. Last updated on 2023-12-15.<br/>
+        &copy; Copyright 2023, SESAMEEG Developers. Last updated on 2023-12-16.<br/>
       Created using <a href="http://sphinx-doc.org/">Sphinx</a> 7.2.6.<br/>
     </p>
   </div>
