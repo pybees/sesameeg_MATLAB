@@ -28,11 +28,11 @@ end
 %% ===== GET DESCRIPTION =====
 function sProcess = GetDescription() %#ok<DEFNU>
     % Description the process
-    sProcess.Comment     = 'Point estimate';
+    sProcess.Comment     = 'Plot sources';
     sProcess.Category    = 'File';
     sProcess.SubGroup    = 'Sources';
     sProcess.Index       = 1001;
-    sProcess.Description = 'Point estimate';
+    sProcess.Description = 'Plot sources';
     % Definition of the input accepted by this process
     sProcess.InputTypes  = {'results'};
     sProcess.OutputTypes = {'results'};
