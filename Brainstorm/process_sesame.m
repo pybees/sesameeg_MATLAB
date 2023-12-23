@@ -41,7 +41,7 @@ function sProcess = GetDescription() %#ok<DEFNU>
     sProcess.Category    = 'File';
     sProcess.SubGroup    = 'Sources';  % sub-menu in which the process appears
     sProcess.Index       = 1000;
-    sProcess.Description = 'https://github.com/pybees/sesameeg_MATLAB';
+    sProcess.Description = 'https://pybees.github.io/sesameeg_MATLAB';
     % Definition of the input accepted by this process
     sProcess.InputTypes  = {'data'};
     sProcess.OutputTypes = {'results'};
@@ -163,7 +163,8 @@ function OutputFiles = Run(sProcess, sInputs) %#ok<DEFNU>
     disp('Running SESAME ...');
     posterior = Compute(B, LF, vertices, cfg);
     
-    ImageGridAmp = sum(posterior.pmap(:,posterior.final_it, :),3);
+    n_est_dip = length(posterior.estimated_dipoles)
+    ImageGridAmp = sum(posterior.pmap(:,posterior.final_it, n_est_dip),3);
 
     % ===== SAVE THE RESULTS =====
     % Create a new data file structure
@@ -173,7 +174,7 @@ function OutputFiles = Run(sProcess, sInputs) %#ok<DEFNU>
 %     ResultsMat.nComponents   = 3;   % 1 (constrained) or 3 (uncostrained)
     ResultsMat.Comment       = ['Sesame_pmap' set_comment(cfg, Time)];
     ResultsMat.Function      = 'Sesame';
-    ResultsMat.Time          = 1;  % Leave it empty if using ImagingKernel
+    ResultsMat.Time          = ActiveTime;  % Leave it empty if using ImagingKernel
     ResultsMat.DataFile      = sInputs(1).FileName;
     ResultsMat.HeadModelFile = HeadModelFile;
     ResultsMat.HeadModelType = sHeadModel.HeadModelType;
