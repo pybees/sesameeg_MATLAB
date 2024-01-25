@@ -69,22 +69,27 @@ function sProcess = GetDescription() %#ok<DEFNU>
     sProcess.options.particles.Type    = 'value';
 %     sProcess.options.particles.Class   = 'Advaced_options';
     sProcess.options.particles.Value   = {100, '', 0};
+
+    % === Advanced Options Controller Definition
+    sProcess.options.control.Comment = 'Advanced options';
+    sProcess.options.control.Type = 'checkbox';
+    sProcess.options.control.Value = 0;
+    sProcess.options.control.Controller = 'advanced';
+    
     % Options: noise std
     sProcess.options.noise_std.Comment = 'noise standard deviation(optional):';
     sProcess.options.noise_std.Type    = 'value';
     sProcess.options.noise_std.Value   = {[]};    
+    sProcess.options.noise_std.Class = 'advanced';
     % Options: dip mom std
     sProcess.options.dip_mom_std.Comment = 'dipole moment standard deviation(optional):';
     sProcess.options.dip_mom_std.Type    = 'value';
     sProcess.options.dip_mom_std.Value   = {[]};
-%     sProcess.options.dip_mom_std.Class   = 'Advaced_options';
-%     sProcess.options.label3.Comment = '<BR><B>Advanced options</B>:';
-%     sProcess.options.label3.Type    = 'label';
-%     sProcess.options.label3.Controller = 'Advanced_options'; %  = 'Advanced options';
+    sProcess.options.dip_mom_std.Class = 'advanced';
     % Options: hyper q
     sProcess.options.hyper_q.Comment = 'Use hyperprior';
     sProcess.options.hyper_q.Type    = 'checkbox';
-%     sProcess.options.hyper_q.Class   = 'Advaced_options';
+    sProcess.options.hyper_q.Class = 'advanced';
     sProcess.options.hyper_q.Value   = 1;
 end
 
@@ -101,12 +106,13 @@ function OutputFiles = Run(sProcess, sInputs) %#ok<DEFNU>
     OutputFiles = {};
     
     % ===== GET OPTIONS =====
-    ActiveTime  = sProcess.options.active_time.Value{1}
-    SensorTypes = sProcess.options.sensortypes.Value
-    cfg.noise_std     = sProcess.options.noise_std.Value{1}
-    cfg.dip_mom_std     = sProcess.options.dip_mom_std.Value{1}
-    cfg.bool_hyper_q     = sProcess.options.hyper_q.Value
-    cfg.n_samples   = sProcess.options.particles.Value{1}
+    ActiveTime  = sProcess.options.active_time.Value{1};
+    SensorTypes = sProcess.options.sensortypes.Value;
+    cfg.noise_std     = sProcess.options.noise_std.Value{1};
+    cfg.dip_mom_std     = sProcess.options.dip_mom_std.Value{1};
+    cfg.bool_hyper_q     = sProcess.options.hyper_q.Value;
+    cfg.n_samples   = sProcess.options.particles.Value{1};
+    disp(cfg)
     
     % ===== LOAD CHANNEL FILE =====
     % Load channel file
@@ -125,8 +131,10 @@ function OutputFiles = Run(sProcess, sInputs) %#ok<DEFNU>
     % Get number of sources
     nSources = length(sHeadModel.GridLoc);
     
+
     % ===== LOAD THE DATA =====
     DataMat = in_bst(sInputs(1).FileName, [], 0);
+    
     sInputs(1).FileName
     nChannels = size(DataMat.F,1);
     nTime     = size(DataMat.F,2);
@@ -149,17 +157,21 @@ function OutputFiles = Run(sProcess, sInputs) %#ok<DEFNU>
         bst_report('Error', sProcess, sInputs, 'All the selected channels are tagged as bad.');
         return;
     end
-    
-    % ===== MODEL SCALING =====
-    % Model scaling, definition of the scaling parameter theta^*
+   
+
+    % ===== Create input for SESAME =====
     LF = sHeadModel.Gain(iChannels, :);
     B = DataMat.F(iChannels, :);
+    if any(ismember(unique({ChannelMat.Channel.Type}), {'EEG','ECOG','SEEG'}))
+      B = bsxfun(@minus, B, mean(B));
+      LF = bsxfun(@minus, LF, mean(LF)); 
+    end
     size(B)
     size(LF)
     vertices = sHeadModel.GridLoc;
 
     % ===== PROCESS =====
-    % Run the IAS algorithm
+    % Run SESAME algorithm
     disp('Running SESAME ...');
     posterior = Compute(B, LF, vertices, cfg);
     
